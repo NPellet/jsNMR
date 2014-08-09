@@ -13,14 +13,12 @@ requirejs.config({
 	}
 });
 
-define( [ './src/nmr2d' ] , function( nmrhandler ) {
+define( [ './src/nmr1d' ] , function( nmrhandler ) {
 
 	"use strict";
 
 	nmrhandler( 
 		'../lib/components/jcampconverter/data/indometacin/1h.dx', 
-		'../lib/components/jcampconverter/data/indometacin/1h.dx', 
-		'../lib/components/jcampconverter/data/indometacin/cosy.dx',
 		'../lib/components/VisuMol/moleculeA.json',
 		$( "#nmr" )
 	);

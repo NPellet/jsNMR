@@ -119,9 +119,9 @@ define( [
 						makeNMRIntegral( otherMode ).then( function( nmrint ) {
 
 							shape.integral = nmrint;
-
 							nmrint.data.pos = shape.getFromData( 'pos' );
 							nmrint.data.pos2 = shape.getFromData( 'pos2' );
+
 						});	
 					});
 				}
@@ -474,7 +474,6 @@ define( [
 					},
 
 					'./graph.plugin.shape': {  },
-
 					'./graph.plugin.linking': { },
 				},
 
