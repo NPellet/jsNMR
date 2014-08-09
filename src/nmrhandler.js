@@ -134,10 +134,14 @@ define( [
 				}
 
 				peak.integral.setPosition();
+
 				if( peak.syncTo ) {
 					setSyncPos( peak, peak.syncTo );
 					peak.syncTo.redrawImpl();
-					peak.syncTo.integral.setPosition();
+
+					if( peak.syncTo.integral ) {
+						peak.syncTo.integral.setPosition();
+					}
 				}
 			
 
