@@ -110,6 +110,7 @@ define( [
 					fillColor: 'transparent', 
 					strokeColor: 'rgba(100, 0, 0, 0.5)', 
 					strokeWidth: '1px',
+
 					label: {
 						position: { x: "100px", y: "20px"},
 						text: 1,
@@ -118,7 +119,8 @@ define( [
 					},
 
 					shapeOptions: {
-						locked: true
+						locked: true,
+						maxPx: 200
 					}
 				 }
 			}
@@ -201,6 +203,7 @@ define( [
 				paddingLeft: 0,
 				paddingRight: 0,
 
+
 				onAnnotationChange: function( data, shape ) {
 					if( data.type == "peakinterval2" ) {
 
@@ -250,6 +253,8 @@ define( [
 				}
 
 			} );
+
+			graphs['x'].setHeight(500);
 
 			/********************************************/
 			/** LOAD SERIES *****************************/

@@ -29,11 +29,11 @@
     "jquery": "~2.1.1",
     "requirejs": "~2.1.14"
   },
-  "_release": "d37c5a412a",
+  "_release": "7061b2a1e0",
   "_resolution": {
     "type": "branch",
     "branch": "master",
-    "commit": "d37c5a412ad133efc5fd74ccbd8117090e6f536f"
+    "commit": "7061b2a1e0f897ee94f8f979641341ccea9cb1f7"
   },
   "_source": "https://github.com/NPellet/graph.git",
   "_target": "*",

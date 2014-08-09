@@ -9,7 +9,7 @@ requirejs.config({
 		'highlightjs': './lib/lib/highlight/highlight.pack',
 		'forms': './lib/lib/forms/form',
 		'components': './lib/components',
-		'graphs': './lib/components/graph/dist/maximal/'
+		'graphs': './lib/components/graph/src'
 	}
 });
 
