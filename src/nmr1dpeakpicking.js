@@ -152,9 +152,9 @@ define( [
 							integralCreated( mode, this );
 						},
 
-						onResize: function() {
+						/*onResize: function() {
 							integralResized( mode, this );
-						},
+						},*/
 
 						onMove: function() {
 							integralMoved( mode, this );
