@@ -25,7 +25,6 @@ define( [
 			} );
 		} );
 
-        // espero que se borren estos comentarios
 		
 		function doNMR( data ) { 
 
