@@ -12,14 +12,3 @@ requirejs.config({
 		'graphs': './lib/components/graph/src'
 	}
 });
-
-define( [ './src/nmr1dpeakpicking' ] , function( nmrhandler ) {
-	"use strict";
-
-	nmrhandler( 
-		'../lib/components/jcampconverter/data/indometacin/1h.dx', 
-		'../lib/components/VisuMol/moleculeA.json',
-		$( "#nmr" )
-	);
-	
-});
