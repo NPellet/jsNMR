@@ -343,7 +343,7 @@
         });
 
     } else if( window ) {
-        console.log( window );
+        
         if( window.Graph && window.Assignation && window.JcampConverter ) {
 
         	window.NMRHandler = NMRHandler( window.Graph, window.Assignation, window.JcampConverter );	

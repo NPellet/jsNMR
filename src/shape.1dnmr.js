@@ -98,7 +98,6 @@ define( [ 'require', 'graphs/shapes/graph.shape.line' ], function( require, Grap
 				this.lines[i].setAttribute('on', false );
 			}
 
-			console.log( this.lines );
 			this.nbLines = peaks.length;
 
 		},
