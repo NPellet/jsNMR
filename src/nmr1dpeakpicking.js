@@ -25,6 +25,7 @@ define( [
 			} );
 		} );
 
+
 		
 		function doNMR( data ) { 
 
@@ -87,7 +88,7 @@ define( [
 				}
 
 				peak.integral.setPosition();
-
+				
 				integral_resizemove( mode );
 			}
 
@@ -125,11 +126,11 @@ define( [
 			}
 
 
-			var peakIntervalOptions = {
+			var nmrSignal1dOptions = {
 
 				x: { 
-					type: 'peakinterval2',
-					strokeColor: 'black',
+					type: 'nmrsignal1d',
+					strokeColor: 'green',
 					strokeWidth: 2,
 					shapeOptions: {
 
@@ -142,7 +143,7 @@ define( [
 			}
 
 
-			function getPeakIntervalHandlers( mode ) {
+			function getNmrSignal1dHandlers( mode ) {
 
 				return { 
 
@@ -151,9 +152,9 @@ define( [
 							integralCreated( mode, this );
 						},
 
-						onResize: function() {
+						/*onResize: function() {
 							integralResized( mode, this );
-						},
+						},*/
 
 						onMove: function() {
 							integralMoved( mode, this );
@@ -166,12 +167,12 @@ define( [
 				}
 			}
 
-			peakIntervalOptions.x = $.extend( true, {}, peakIntervalOptions.x, getPeakIntervalHandlers( 'x' ) );
+			nmrSignal1dOptions.x = $.extend( true, {}, nmrSignal1dOptions.x, getNmrSignal1dHandlers( 'x' ) );
 		
 
 			function makePeakPosition( mode ) {
 
-				return graphs[ mode ].makeShape( $.extend( true, {}, peakIntervalOptions[ mode ] ), {} );
+				return graphs[ mode ].makeShape( $.extend( true, {}, nmrSignal1dOptions[ mode ] ), {} );
 			}
 
 			function makeNMRIntegral( mode, integral ) {
@@ -204,7 +205,7 @@ define( [
 
 
 				onAnnotationChange: function( data, shape ) {
-					if( data.type == "peakinterval2" ) {
+					if( data.type == "nmrsignal1d" ) {
 
 						if( ! integralBasis ) {
 							integralBasis = shape.integral.lastSum;
@@ -234,7 +235,7 @@ define( [
 
 					},
 
-					'./graph.plugin.shape': peakIntervalOptions[ 'x' ],
+					'./graph.plugin.shape': nmrSignal1dOptions[ 'x' ],
 				},
 
 
