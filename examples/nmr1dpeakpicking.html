@@ -6,36 +6,32 @@
 		<script src="../lib/components/graph/dist/jsgraph.js" type="text/javascript"></script>	
 		<script src="../lib/components/jcampconverter/src/jcampconverter.js" type="text/javascript"></script>	
 		<script src="../src/assignation.js" type="text/javascript"></script>	
-
 		
-		<script  src="../src/nmr1dpeakpicking.js" type="text/javascript"></script>	
-
-
+		<script  src="../src/nmr.js" type="text/javascript"></script>	
 
 		<!-- The only reason we still use requirejs is to load the shape -->
 		<script data-main="./nmr1dpeakpicking" src="../lib/components/requirejs/require.js" type="text/javascript"></script>
 		
-
-
-		<link href="./style.css" rel="stylesheet" />
-	
+		<link href="./style.css" rel="stylesheet" />	
 	</head>
 
 	<body>
-
-
-	<div id="nmr" style="width: 800px; height: 700px;"></div>
+		<div id="nmr" style="width: 800px; height: 700px;"></div>
 	<!--<div id="tools"></div>-->
-
 	<script>
 
 
 	$( document ).ready( function() {
-		window.NMRHandler( 
-			'../lib/components/jcampconverter/data/indometacin/1h.dx', 
-			'../lib/components/VisuMol/moleculeA.json',
-			$( "#nmr" )
-		);
+		
+		var nmr = new NMRHandler({
+				
+			dom: $("#nmr"),
+
+			mode: '1d',
+			url: '../lib/components/jcampconverter/data/indometacin/1h.dx'		
+
+
+		});
 	});
 
 	</script>
