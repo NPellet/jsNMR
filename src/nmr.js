@@ -1,6 +1,4 @@
 
-
-
 (function( global, factory ) {
 
     if ( typeof module === "object" && typeof module.exports === "object" ) {
@@ -208,42 +206,21 @@
 			return mode == 'x' ? 'y' : ( mode == 'y' ? 'x' : ( console.error( "Mode not recognized") ) );
 		}
 
-/*
-		function integralCreated( nmr, mode, integral ) {
+		function makePeakPosition( nmr, mode ) {
 
-			makeNMRIntegral( nmr, mode, integral ).then( function( nmrint ) {
+			return nmr.graphs[ mode ].makeShape( $.extend( true, {}, nmr.nmrSignal1dOptions[ mode ] ), {} );
+		}
 
-				integral.integral = nmrint;
-				nmrint.data.pos = integral.getFromData( 'pos' );
-				nmrint.data.pos2 = integral.getFromData( 'pos2' );//integral.getFromData( 'pos2' );
-			
+		function makeNMRIntegral( nmr, mode, integral ) {
+
+			return nmr.graphs[ mode ].makeShape( $.extend( true, {}, nmr.nmrIntegralOptions[ mode ] ), {} ).then( function( nmrint ) {
+
+				nmr.integrals[ mode ].push( nmrint );
+				nmrint.draw();
+				return nmrint;
 			} );
-
 		}
-
-
-
-		function integralMoved( nmr, mode, peak ) {
-
-			if( ! peak.integral ) {
-				return;
-			}
-
-			peak.integral.setPosition();
-			
-			integral_resizemove( nmr, mode );
-		}
-
-		function integralRemoved( nmr, mode, peak ) {
-
-			if( peak.integral ) {
-				peak.integral.kill();
-				nmr.integrals[ mode ].splice( nmr.integrals[ mode ].indexOf( peak.integral ), 1 );
-			}
-
-			integral_resizemove( nmr, mode );
-
-		}*/
+		
 
 		function getNmrSignal1dHandlers( nmr, mode ) {
 
@@ -269,22 +246,6 @@
 			}
 		}
 
-
-		function makePeakPosition( nmr, mode ) {
-
-			return nmr.graphs[ mode ].makeShape( $.extend( true, {}, nmr.nmrSignal1dOptions[ mode ] ), {} );
-		}
-
-		function makeNMRIntegral( nmr, mode, integral ) {
-
-			return nmr.graphs[ mode ].makeShape( $.extend( true, {}, nmr.nmrIntegralOptions[ mode ] ), {} ).then( function( nmrint ) {
-
-				nmr.integrals[ mode ].push( nmrint );
-				nmrint.draw();
-				return nmrint;
-			} );
-		}
-		
 
 
 			
@@ -558,11 +519,13 @@
 				paddingRight: 0,
 
 				onAnnotationChange: function( data, shape ) {
-					if( data.type == "peakinterval2" ) {
+
+					if( data.url == "src/shape.1dnmr" ) {
 
 						if( ! self.integralBasis ) {
 							self.integralBasis = shape.integral.lastSum;
 						}
+
 
 					} else if( data.type == "nmrintegral" ) {
 
@@ -849,7 +812,7 @@
 
 		return NMR;
 
-	}; // End NMRHandler Constructor
+	}; // End Factory
 
 
 
