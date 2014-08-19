@@ -423,32 +423,35 @@
 
 				onAnnotationChange: function( data, shape ) {
 
-					var pos = data.pos;
-					pos.x = ( pos.x + data.pos2.x ) / 2;
-					pos.y = ( pos.y + data.pos2.y ) / 2;
+					if( data.type == "rect" ) {
+						var pos = data.pos;
+						pos.x = ( pos.x + data.pos2.x ) / 2;
+						pos.y = ( pos.y + data.pos2.y ) / 2;
 
-					this.makeShape( {
+						this.makeShape( {
 
-						type: 'cross',
-						pos: pos,
+							type: 'cross',
+							pos: pos,
 
-						strokeColor: 'red',
-						strokeWidth: 3,
+							strokeColor: 'red',
+							strokeWidth: 3,
 
-						shapeOptions: {
-							length: 20
-						}
+							shapeOptions: {
+								length: 20,
+								locked: true
+							}
 
-					} ).then( function( shape2 ) {
+						} ).then( function( shape2 ) {
 
-						shape2.draw();
-						shape2.redrawImpl();
+							shape2.draw();
+							shape2.redrawImpl();
 
-					} );
+						} );
 
-					// ANDRES
-					// You can do here your processing and create new shapes
-					shape.kill();
+						// ANDRES
+						// You can do here your processing and create new shapes
+						shape.kill();
+					}
 				},
 
 				plugins: {
