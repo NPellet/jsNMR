@@ -340,12 +340,10 @@
 				break;
 			}
 
-
-
-
 			fetchUrls( this, urls );
 
-		
+			// 1D
+	
 			this.nmrIntegralOptions = {
 				 x: { 
 					type: 'nmrintegral', 
@@ -353,7 +351,7 @@
 					strokeColor: 'rgba(100, 0, 0, 0.5)', 
 					strokeWidth: '1px',
 					label: {
-						position: { x: "100px", y: "20px"},
+						position: { },
 						text: 1,
 						color: 'red',
 						anchor: 'middle'
@@ -396,6 +394,24 @@
 			this.nmrSignal1dOptions.y = $.extend( true, {}, this.nmrSignal1dOptions.x, getNmrSignal1dHandlers( this, 'y' ) );
 
 
+
+			// 2D
+			this.nmrSignal2dOptions = {
+
+			
+				url: 'src/shape.2dnmr',
+				strokeColor: 'green',
+				strokeWidth: 2,
+				shapeOptions: {
+
+					horizontal: true, 
+					forcedCoords: { y: "20px" },
+					bindable: true,
+					axis: 'x'
+				}
+			}
+		
+
 		}
 
 		NMR.prototype.isSymmetric = function() {
@@ -432,6 +448,13 @@
 				paddingLeft: 0,
 				paddingRight: 0,
 
+				onAnnotationChange: function( data, shape ) {
+
+					// ANDRES
+					// You can do here your processing and create new shapes
+					shape.kill();
+				},
+
 				plugins: {
 
 					'graph.plugin.zoom': { 
@@ -460,9 +483,13 @@
 					},
 
 					'graph.plugin.shape': {
-						type: 'peakintegration2d',
+						type: 'rect',
+
+						fillColor: 'rgba(100, 0, 0, 0.3)',
+
 						shapeOptions: { 
-							bindable: false
+							bindable: false,
+
 						}
 						
 					},
