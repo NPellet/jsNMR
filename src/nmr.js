@@ -36,6 +36,22 @@
 				fetching.push( $.get( urls[ i ] ).then( function( data ) { return JcampConverter( data ) } ) );
 			}
 
+			nmr.divLoading = $("<div />").css( {
+
+
+				width: nmr.getDom().width(),
+				height: nmr.getDom().height(),
+				position: 'absolute',
+				backgroundColor: 'rgba(200, 200, 200, 0.5)',
+				textAlign: 'center',
+				lineHeight: nmr.getDom().height() + "px",
+				fontSize: '2em',
+				border: "1px solid #c0c0c0"
+
+			} ).html("Loading...");
+
+			nmr.getDom().prepend( nmr.divLoading );
+
 			$.when.apply( $, fetching ).then( function() {
 
 				var j = 0;
@@ -45,6 +61,7 @@
 					j++;
 				}
 
+				nmr.divLoading.remove();
 				doNMR( nmr, urls );
 
 			} );
