@@ -450,6 +450,29 @@
 
 				onAnnotationChange: function( data, shape ) {
 
+					var pos = data.pos;
+					pos.x = ( pos.x + data.pos2.x ) / 2;
+					pos.y = ( pos.y + data.pos2.y ) / 2;
+
+					this.makeShape( {
+
+						type: 'cross',
+						pos: pos,
+
+						strokeColor: 'red',
+						strokeWidth: 3,
+
+						shapeOptions: {
+							length: 20
+						}
+
+					} ).then( function( shape2 ) {
+
+						shape2.draw();
+						shape2.redrawImpl();
+
+					} );
+
 					// ANDRES
 					// You can do here your processing and create new shapes
 					shape.kill();
