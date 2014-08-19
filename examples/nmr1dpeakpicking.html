@@ -40,12 +40,11 @@
 			}
 
 		</style>
-
-
 	</head>
 
 	<body>
 		<div id="nmr" style="width: 800px; height: 700px;"></div>
+		<div id="nmr2" style="width: 800px; height: 700px;"></div>
 	<!--<div id="tools"></div>-->
 	<script>
 
@@ -55,6 +54,20 @@
 		var nmr = new NMRHandler({
 				
 			dom: $("#nmr"),
+
+			mode: '1d',
+			url: '../lib/components/jcampconverter/data/indometacin/1h.dx'		
+
+
+		});
+	});
+
+
+	$( document ).ready( function() {
+		
+		var nmr = new NMRHandler({
+				
+			dom: $("#nmr2"),
 
 			mode: '2d',
 			
@@ -67,6 +80,8 @@
 			symmetric: true
 		});
 	});
+
+
 
 	</script>
 
