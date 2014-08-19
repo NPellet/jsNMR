@@ -76,7 +76,7 @@
 
 
 			if( nmr.isSymmetric( ) && ! noLoop ) {
-				integral_resizemove( nmr, getOtherMode( mode ), true );
+				integral_resizemove( nmr, getOtherMode( nmr, mode ), true );
 			}
 		}
 
@@ -108,7 +108,7 @@
 
 		//	 poses.push( integral.getFromData('pos') );
 
-			if( symmetric ) {
+			if( nmr.isSymmetric( ) ) {
 
 				var otherMode = getOtherMode( nmr, mode );
 
@@ -196,7 +196,7 @@
 			return mode == 'x' ? 'y' : ( mode == 'y' ? 'x' : ( console.error( "Mode not recognized") ) );
 		}
 
-
+/*
 		function integralCreated( nmr, mode, integral ) {
 
 			makeNMRIntegral( nmr, mode, integral ).then( function( nmrint ) {
@@ -209,16 +209,6 @@
 
 		}
 
-		function integralResized( nmr, mode, peak ) {
-
-			if( ! peak.integral ) {
-				return;
-			}
-
-			peak.integral.setPosition();
-
-			integral_resizemove( nmr, mode );
-		}
 
 
 		function integralMoved( nmr, mode, peak ) {
@@ -241,7 +231,7 @@
 
 			integral_resizemove( nmr, mode );
 
-		}
+		}*/
 
 		function getNmrSignal1dHandlers( nmr, mode ) {
 
@@ -270,7 +260,7 @@
 
 		function makePeakPosition( nmr, mode ) {
 
-			nmr.graphs[ mode ].makeShape( $.extend( true, {}, nmr.nmrSignal1dOptions[ mode ] ), {} );
+			return nmr.graphs[ mode ].makeShape( $.extend( true, {}, nmr.nmrSignal1dOptions[ mode ] ), {} );
 		}
 
 		function makeNMRIntegral( nmr, mode, integral ) {
@@ -433,7 +423,7 @@
 
 			/** LOAD 2D *********************************/
 			
-			this.graphs[ '_2d' ] = new Graph( nmr.find('.nmr-2d').get(0), {
+			this.graphs[ '_2d' ] = new Graph( this.getDom().find('.nmr-2d').get(0), {
 
 				close: { left: false, top: false, right: false },
 
@@ -444,32 +434,32 @@
 
 				plugins: {
 
-					'./graph.plugin.zoom': { 
+					'graph.plugin.zoom': { 
 
 						zoomMode: 'xy',
 						onZoomStart: function( graph, x, y, e, target ) {
-							graphs['x']._pluginExecute( './graph.plugin.zoom', 'onMouseDown', [ graphs['x'], x, y, e, true ] );
-							graphs['y']._pluginExecute( './graph.plugin.zoom', 'onMouseDown', [ graphs['y'], x, y, e, true ] );
+							self.graphs['x']._pluginExecute( 'graph.plugin.zoom', 'onMouseDown', [ self.graphs['x'], x, y, e, true ] );
+							self.graphs['y']._pluginExecute( 'graph.plugin.zoom', 'onMouseDown', [ self.graphs['y'], x, y, e, true ] );
 						},
 
 						onZoomMove: function( graph, x, y, e, target ) {
-							graphs['x']._pluginExecute( './graph.plugin.zoom', 'onMouseMove', [ graphs['x'], x, y, e, true ] );
-							graphs['y']._pluginExecute( './graph.plugin.zoom', 'onMouseMove', [ graphs['y'], x, y, e, true ] );
+							self.graphs['x']._pluginExecute( 'graph.plugin.zoom', 'onMouseMove', [ self.graphs['x'], x, y, e, true ] );
+							self.graphs['y']._pluginExecute( 'graph.plugin.zoom', 'onMouseMove', [ self.graphs['y'], x, y, e, true ] );
 						},
 
 						onZoomEnd: function( graph, x, y, e, target ) {
-							graphs['x']._pluginExecute( './graph.plugin.zoom', 'onMouseUp', [ graphs['x'], x, y, e, true ] );
-							graphs['y']._pluginExecute( './graph.plugin.zoom', 'onMouseUp', [ graphs['y'], x, y, e, true ] );
+							self.graphs['x']._pluginExecute( 'graph.plugin.zoom', 'onMouseUp', [ self.graphs['x'], x, y, e, true ] );
+							self.graphs['y']._pluginExecute( 'graph.plugin.zoom', 'onMouseUp', [ self.graphs['y'], x, y, e, true ] );
 						},
 
 						onDblClick: function( x, y, prefs, e ) {
 							
-							graphs['y']._pluginExecute( './graph.plugin.zoom', 'onDblClick', [ graphs['y'], x, y, { mode: 'total' }, e, true ] );
-							graphs['x']._pluginExecute( './graph.plugin.zoom', 'onDblClick', [ graphs['x'], x, y, { mode: 'total' }, e, true ] );
+							self.graphs['y']._pluginExecute( 'graph.plugin.zoom', 'onDblClick', [ self.graphs['y'], x, y, { mode: 'total' }, e, true ] );
+							self.graphs['x']._pluginExecute( 'graph.plugin.zoom', 'onDblClick', [ self.graphs['x'], x, y, { mode: 'total' }, e, true ] );
 						}
 					},
 
-					'./graph.plugin.shape': {
+					'graph.plugin.shape': {
 						type: 'peakintegration2d',
 						shapeOptions: { 
 							bindable: false
@@ -480,15 +470,15 @@
 
 				dblclick: {
 					type: 'plugin',
-					plugin: './graph.plugin.zoom',
+					plugin: 'graph.plugin.zoom',
 					options: {
 						mode: 'total'
 					}
 				},
 
 				pluginAction: {
-					'./graph.plugin.zoom': { shift: false, ctrl: false },
-					'./graph.plugin.shape': { shift: true, ctrl: false }
+					'graph.plugin.zoom': { shift: false, ctrl: false },
+					'graph.plugin.shape': { shift: true, ctrl: false }
 				}
 
 			} );
@@ -497,7 +487,7 @@
 
 			/** LOAD X **********************************/	
 
-			this.graphs['x'] = new Graph( nmr.find('.nmr-1d-x').get(0), {
+			this.graphs['x'] = new Graph( this.getDom().find('.nmr-1d-x').get(0), {
 
 				close: { left: false, top: false, right: false },
 				paddingBottom: 0,
@@ -534,50 +524,50 @@
 				},
 
 				plugins: {
-					'./graph.plugin.zoom': { 
+					'graph.plugin.zoom': { 
 						zoomMode: 'x',
 
 						onZoomStart: function( graph, x, y, e, target ) {
 
-							graphs[ '_2d' ]._pluginExecute( './graph.plugin.zoom', 'onMouseDown', [ graphs[ '_2d' ], x, undefined, e, true ] );
+							self.graphs[ '_2d' ]._pluginExecute( 'graph.plugin.zoom', 'onMouseDown', [ self.graphs[ '_2d' ], x, undefined, e, true ] );
 
 						},
 
 						onZoomMove: function( graph, x, y, e, target ) {
 
-							graphs[ '_2d' ]._pluginExecute( './graph.plugin.zoom', 'onMouseMove', [ graphs[ '_2d' ], x, undefined, e, true ] );
+							self.graphs[ '_2d' ]._pluginExecute( 'graph.plugin.zoom', 'onMouseMove', [ self.graphs[ '_2d' ], x, undefined, e, true ] );
 
 						},
 
 						onZoomEnd: function( graph, x, y, e, target ) {
 
-							graphs[ '_2d' ]._pluginExecute( './graph.plugin.zoom', 'onMouseUp', [ graphs[ '_2d' ], x, undefined, e, true ] );
+							self.graphs[ '_2d' ]._pluginExecute( 'graph.plugin.zoom', 'onMouseUp', [ self.graphs[ '_2d' ], x, undefined, e, true ] );
 
 						},
 
 						onDblClick: function( x, y, prefs, e ) {
 							
-							graphs[ '_2d' ]._pluginExecute( './graph.plugin.zoom', 'onDblClick', [ graphs[ '_2d' ], x, y, { mode: 'xtotal' }, e, true ] );
+							self.graphs[ '_2d' ]._pluginExecute( 'graph.plugin.zoom', 'onDblClick', [ self.graphs[ '_2d' ], x, y, { mode: 'xtotal' }, e, true ] );
 							
 						}
 
 					},
 
-					'./graph.plugin.shape': self.nmrSignal1dOptions[ 'x' ],
+					'graph.plugin.shape': self.nmrSignal1dOptions[ 'x' ],
 				},
 
 
 				dblclick: {
 					type: 'plugin',
-					plugin: './graph.plugin.zoom',
+					plugin: 'graph.plugin.zoom',
 					options: {
 						mode: 'total'
 					}
 				},
 
 				pluginAction: {
-					'./graph.plugin.zoom': { shift: false, ctrl: false },
-					'./graph.plugin.shape': { shift: true, ctrl: false }
+					'graph.plugin.zoom': { shift: false, ctrl: false },
+					'graph.plugin.shape': { shift: true, ctrl: false }
 				}
 
 			} );
@@ -585,58 +575,58 @@
 
 			/** LOAD Y **********************************/
 			
-			this.graphs['y'] = new Graph( nmr.find('.nmr-1d-y').get(0), { 
+			this.graphs['y'] = new Graph( this.getDom().find('.nmr-1d-y').get(0), { 
 
 				close: { left: false, top: false, right: false },
 
 				plugins: {
-					'./graph.plugin.zoom': { 
+					'graph.plugin.zoom': { 
 						zoomMode: 'y',
 						onZoomStart: function( graph, x, y, e, target ) {
 
-							graphs[ '_2d' ]._pluginExecute( './graph.plugin.zoom', 'onMouseDown', [  graphs[ '_2d' ], undefined , y, e, true ] );
+							self.graphs[ '_2d' ]._pluginExecute( 'graph.plugin.zoom', 'onMouseDown', [ self.graphs[ '_2d' ], undefined , y, e, true ] );
 
 						},
 
 						onZoomMove: function( graph, x, y, e, target ) {
 
-							graphs[ '_2d' ]._pluginExecute( './graph.plugin.zoom', 'onMouseMove', [ graphs[ '_2d' ], undefined , y, e, true ] );
+							self.graphs[ '_2d' ]._pluginExecute( 'graph.plugin.zoom', 'onMouseMove', [ self.graphs[ '_2d' ], undefined , y, e, true ] );
 
 						},
 
 						onZoomEnd: function( graph, x, y, e, target ) {
 
-							graphs[ '_2d' ]._pluginExecute( './graph.plugin.zoom', 'onMouseUp', [ graphs[ '_2d' ], undefined, y, e, true ] );
+							self.graphs[ '_2d' ]._pluginExecute( 'graph.plugin.zoom', 'onMouseUp', [ self.graphs[ '_2d' ], undefined, y, e, true ] );
 
 						},
 
 						onDblClick: function( x, y, prefs, e ) {
 							
-							graphs[ '_2d' ]._pluginExecute( './graph.plugin.zoom', 'onDblClick', [ graphs[ '_2d' ], x, y, { mode: 'ytotal' }, e, true ] );
+							self.graphs[ '_2d' ]._pluginExecute( 'graph.plugin.zoom', 'onDblClick', [ self.graphs[ '_2d' ], x, y, { mode: 'ytotal' }, e, true ] );
 							
 						}
 					},
 
-					'./graph.plugin.shape': self.nmrSignal1dOptions[ 'y' ]
+					'graph.plugin.shape': self.nmrSignal1dOptions[ 'y' ]
 				},
 
 
 				dblclick: {
 					type: 'plugin',
-					plugin: './graph.plugin.zoom',
+					plugin: 'graph.plugin.zoom',
 					options: {
 						mode: 'total'
 					}
 				},
 
 				pluginAction: {
-					'./graph.plugin.zoom': { shift: false, ctrl: false },
-					'./graph.plugin.shape': { shift: true, ctrl: false }
+					'graph.plugin.zoom': { shift: false, ctrl: false },
+					'graph.plugin.shape': { shift: true, ctrl: false }
 				},
 
 				wheel: {
 					type: 'plugin',
-					plugin: './graph.plugin.zoom',
+					plugin: 'graph.plugin.zoom',
 					options: {
 						direction: 'x'
 					}
@@ -654,28 +644,28 @@
 			/** LOAD SERIES *****************************/
 			/********************************************/
 
-			var serie_x = graphs['x'].newSerie("seriex" )
+			var serie_x = this.graphs['x'].newSerie("seriex" )
 				.setLabel( "My serie" )
 				.autoAxis()
-				.setData( _1d.spectra[ 0 ].data[ 0 ] );
+				.setData( this.data.x.spectra[ 0 ].data[ 0 ] );
 
 			serie_x.getYAxis().setDisplay( false ).togglePrimaryGrid( false ).toggleSecondaryGrid( false );
 			serie_x.getXAxis().flip(true).setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setTickPosition( 'outside' )
 
-			var serie_y = graphs['y'].newSerie("seriey", { flip: true } )
+			var serie_y = this.graphs['y'].newSerie("seriey", { flip: true } )
 				.setLabel( "My serie" )
-				.setXAxis( graphs['y'].getBottomAxis( ) )
-				.setYAxis( graphs['y'].getRightAxis( ) )
-				.setData( _1d.spectra[ 0 ].data[ 0 ] );
+				.setXAxis( this.graphs['y'].getBottomAxis( ) )
+				.setYAxis( this.graphs['y'].getRightAxis( ) )
+				.setData( this.data.y.spectra[ 0 ].data[ 0 ] );
 
 			serie_y.getYAxis().setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).flip( true ).setTickPosition( 'outside' );
 			serie_y.getXAxis().togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setDisplay( false ).flip( true );
 
 
-			var serie_2d = graphs[ '_2d' ].newSerie("serie2d", { }, 'contour' )
+			var serie_2d = this.graphs[ '_2d' ].newSerie("serie2d", { }, 'contour' )
 				.setLabel( "My serie" )
 				.autoAxis()
-				.setData( _2d.contourLines )
+				.setData( this.data.twoD.contourLines )
 
 			serie_2d.getXAxis().forceMin( serie_x.getXAxis().getMinValue( ) );
 			serie_2d.getXAxis().forceMax( serie_x.getXAxis().getMaxValue( ) );
@@ -775,7 +765,7 @@
 			/********************************************/
 			/** LOAD SERIES *****************************/
 			/********************************************/
-console.log( this, this.data );
+
 			var serie_x = this.graphs[ 'x' ].newSerie("seriex" )
 				.setLabel( "My serie" )
 				.autoAxis()
