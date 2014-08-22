@@ -412,7 +412,7 @@
 
 				new Assignation( this.options.dom, this.graphs );
 			}
-			
+
 		}
 
 		function loadMolecule( molUrl, nmrDom ) {
@@ -703,7 +703,7 @@
 				paddingBottom: 0,
 				paddingTop: 0,
 				paddingLeft: 0,
-				paddingRight: 0
+				paddingRight: 10
 
 			} );
 			
