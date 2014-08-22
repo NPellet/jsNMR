@@ -9,7 +9,7 @@
 
 } ( window, function( window ) {
 
-	var factory = function( Graph, Attribution, JcampConverter ) {
+	var factory = function( Graph, Attribution, JcampConverter, Molecule ) {
 
 		// Root here
 		var defaults = {
@@ -57,6 +57,7 @@
 				nmr.divLoading.remove();
 				doNMR( nmr, urls );
 
+				nmr.loaded();
 			} );
 		}
 
@@ -257,8 +258,10 @@
 
 				case '1d':
 
+				//console.time("Making the whole graph");
 					nmr.options.dom.append('<div />');
 					nmr.makeGraphs1D();
+				//	console.timeEnd("Making the whole graph");
 
 				break;
 
@@ -314,6 +317,7 @@
 			}
 
 			fetchUrls( this, urls );
+
 
 			// 1D
 	
@@ -397,6 +401,42 @@
 
 		NMR.prototype.getDom = function() {
 			return this.options.dom;
+		}
+
+		NMR.prototype.loaded = function() {
+
+
+			if( this.options.molecule ) {
+
+				loadMolecule( this.options.molecule, this.options.dom );
+
+				new Assignation( this.options.dom, this.graphs );
+			}
+			
+		}
+
+		function loadMolecule( molUrl, nmrDom ) {
+
+			var dom = document.createElement("div");
+			dom.setAttribute('style', 'position: absolute;');
+			// Create a new molecule
+			var molecule = new Molecule( { maxBondLengthAverage: 40 } );
+
+			// Adds the molecule somewhere in the DOM
+			dom.appendChild( molecule.getDom() );
+
+			// Set the size of the canvas
+			molecule.resize( 300, 200 );
+
+			// Fetches the JSON and uses it as the source data
+			molecule.setDataFromJSONFile( molUrl ).then( function() {
+
+				molecule.render();
+
+			});
+
+			nmrDom.prepend( dom );
+	
 		}
 
 
@@ -788,7 +828,7 @@
 			} );
 
 
-			this.graphs[ 'x' ].setHeight(500);
+			this.graphs[ 'x' ].setHeight(300);
 
 			/********************************************/
 			/** LOAD SERIES *****************************/
@@ -821,8 +861,8 @@
 
     if( typeof define === "function" && define.amd ) {
         
-        define( [ 'graph', 'assignation', 'jcampconverter' ], function( Graph, Assignation, JcampConverter ) {
-            return factory( Graph, Assignation, JcampConverter );
+        define( [ 'graph', 'assignation', 'jcampconverter', 'lib/components/VisuMol/src/molecule' ], function( Graph, Assignation, JcampConverter, Molecule ) {
+            return factory( Graph, Assignation, JcampConverter, Molecule );
         });
 
     } else if( window ) {
@@ -830,7 +870,7 @@
         if( window.Graph && window.Assignation && window.JcampConverter ) {
 
         	// Namespace NMRHandler
-        	window.NMRHandler = factory( window.Graph, window.Assignation, window.JcampConverter );	
+        	window.NMRHandler = factory( window.Graph, window.Assignation, window.JcampConverter, window.Molecule );	
 
         } else {
         	throw "Graph, Attribution or Jcamp is not defined"
@@ -838,41 +878,4 @@
     }
 
 }));
-
-
-
-
-/*
-
-			
-			function loadMolecule( molUrl ) {
-
-				return;
-				require( [ './lib/components/VisuMol/src/molecule' ], function( Molecule ) {
-
-
-					var dom = document.createElement("div");
-					dom.setAttribute('style', 'position: absolute;');
-					// Create a new molecule
-					var molecule = new Molecule( { maxBondLengthAverage: 40 } );
-
-					// Adds the molecule somewhere in the DOM
-					dom.appendChild( molecule.getDom() );
-
-					// Set the size of the canvas
-					molecule.resize( 300, 200 );
-
-					// Fetches the JSON and uses it as the source data
-					molecule.setDataFromJSONFile( molUrl ).then( function() {
-
-						molecule.render();
-
-					});
-
-					nmr.prepend( dom );
-				} );
-			}
-		}
-	}
-*/
 
