@@ -21,7 +21,7 @@
 			}
 		}
 
-		function fetchUrls( nmr, urls ) {
+		function fetchUrls( nmr, urls, options ) {
 
 			var fetching = [];
 
@@ -30,20 +30,26 @@
 				fetching.push( $.get( urls[ i ] ).then( function( data ) { return JcampConverter( data ) } ) );
 			}
 
-			nmr.divLoading = $("<div />").css( {
+			if( ! nmr.divLoading ) {
 
-				width: nmr.getDom().width(),
-				height: nmr.getDom().height(),
-				position: 'absolute',
-				backgroundColor: 'rgba(200, 200, 200, 0.5)',
-				textAlign: 'center',
-				lineHeight: nmr.getDom().height() + "px",
-				fontSize: '2em',
-				border: "1px solid #c0c0c0"
+				nmr.divLoading = $("<div />").css( {
 
-			} ).html("Loading...");
+					width: nmr.getDom().width(),
+					height: nmr.getDom().height(),
+					position: 'absolute',
+					backgroundColor: 'rgba(200, 200, 200, 0.5)',
+					textAlign: 'center',
+					lineHeight: nmr.getDom().height() + "px",
+					fontSize: '2em',
+					border: "1px solid #c0c0c0"
 
-			nmr.getDom().prepend( nmr.divLoading );
+				} ).html("Loading...");
+
+				nmr.getDom().prepend( nmr.divLoading );
+			}
+
+			nmr.loading = nmr.loading || 0
+			nmr.loading++;
 
 			$.when.apply( $, fetching ).then( function() {
 
@@ -54,10 +60,14 @@
 					j++;
 				}
 
-				nmr.divLoading.remove();
-				doNMR( nmr, urls );
+				nmr.loading--;
+				if( nmr.loading == 0 ) {
+					nmr.divLoading.remove();
+					nmr.divLoading = false;
+				}
 
-				nmr.loaded();
+				nmr.series.push( urls );
+				nmr.loaded( urls, options );
 			} );
 		}
 
@@ -250,9 +260,7 @@
 
 
 			
-		function doNMR( nmr, data ) { 
-
-			nmr.data = data;
+		function doNMR( nmr ) { 
 
 			switch( nmr.getMode() ) {
 
@@ -278,46 +286,7 @@
 		var NMR = function( options ) {
 
 			this.options = $.extend( true, {}, defaults, options );
-
-			
-			var urls = {};
-
-			switch( this.options.mode ) {
-
-				case '2d':
-
-					this.options.urls.twoD = this.options.urls.twoD || this.options.urls.url;
-					this.options.urls.x = this.options.urls.x || this.options.urls.oneD;
-					this.options.urls.y = ( this.options.urls.y || this.options.urls.oneD ) || ( this.options.symmetric ? this.options.urls.x : false );
-
-					urls.twoD = this.options.urls.twoD; // Compulsory
-					
-					if( this.options.urls.x ) {
-						urls.x = this.options.urls.x;
-					}
-
-					if( this.options.urls.y ) {
-						urls.y = this.options.urls.y;
-					}
-
-					this.graphs = { x: null, y: null, _2d: null };
-					this.integrals = { x: [], y: [], _2d: [] };
-				break;
-
-				case '1d':
-					
-					this.options.urls.oneD = this.options.url || this.options.urls.oneD || this.options.urls.x;
-					urls.x = this.options.urls.oneD;	
-
-					this.graphs = { x: null };
-					this.integrals = { x: [] };
-
-
-				break;
-			}
-
-			fetchUrls( this, urls );
-
+			this.series = [];
 
 			// 1D
 	
@@ -387,9 +356,77 @@
 					axis: 'x'
 				}
 			}
-		
 
+			switch( this.options.mode ) {
+				case '2d':
+					this.graphs = { x: null, y: null, _2d: null };
+					this.integrals = { x: [], y: [], _2d: [] };
+				break;
+
+				case '1d':
+					this.graphs = { x: null };
+					this.integrals = { x: [] };
+				break;
+			}
+
+			doNMR( this );
+
+
+			switch( this.options.mode ) {
+				case '2d':
+					
+				break;
+
+				case '1d':
+					this.legend = this.graphs.x.makeLegend( { frame: true, frameWidth: 2, frameColor: 'grey', movable: true, backgroundColor: 'white' } );
+					this.legend.setPosition( { x: "20px", y: "40px" });
+
+				break;
+			}
 		}
+
+
+		var loadDefaults = {
+			urls: {}
+		}
+
+		NMR.prototype.load = function( load ) {
+
+			var load = $.extend( true, {}, loadDefaults, load );
+			var urls = {};
+			switch( this.options.mode ) {
+
+				case '2d':
+
+					load.urls.twoD = load.urls.twoD || load.urls.url;
+					load.urls.x = load.urls.x || load.urls.oneD;
+					load.urls.y = ( load.urls.y || load.urls.oneD ) || ( load.symmetric ? load.urls.x : false );
+
+					urls.twoD = load.urls.twoD; // Compulsory
+					
+					if( load.urls.x ) {
+						urls.x = load.urls.x;
+					}
+
+					if( load.urls.y ) {
+						urls.y = load.urls.y;
+					}
+
+				
+				break;
+
+				case '1d':
+					
+					load.urls.oneD = load.url || load.urls.oneD || load.urls.x;
+					urls.x = load.urls.oneD;	
+
+
+				break;
+			}
+
+			fetchUrls( this, urls, load );
+		}
+
 
 		NMR.prototype.isSymmetric = function() {
 			return this.options.symmetric || false;
@@ -403,8 +440,122 @@
 			return this.options.dom;
 		}
 
-		NMR.prototype.loaded = function() {
+		NMR.prototype.loaded = function( series, options ) {
 
+
+			switch( this.getMode() ) {
+
+				case '1d':
+
+
+					var serie_x = this.graphs[ 'x' ].newSerie("seriex", { useSlots: true } )
+						.setLabel( "My serie" )
+						.autoAxis()
+						.setData( series.x.spectra[ 0 ].data[ 0 ] )
+						.XIsMonotoneous();
+
+					if( options.lineColor ) {
+						serie_x.setLineColor( options.lineColor );
+					}
+
+
+					if( options.lineWidth ) {
+						serie_x.setLineWidth( options.lineWidth );
+					}
+
+
+					if( options.setLineStyle ) {
+						serie_x.setLineStyle( options.lineStyle );
+					}
+
+					//serie_x.degrade( 1 ).kill()
+
+					serie_x.getYAxis().setDisplay( false ).togglePrimaryGrid( false ).toggleSecondaryGrid( false );
+					serie_x.getXAxis().flip(true).setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setTickPosition( 'outside' )
+
+					this.graphs.x.autoscaleAxes();
+					this.graphs.x.drawSeries();
+
+				break;
+
+				case '2d':
+
+
+					/********************************************/
+					/** LOAD SERIES *****************************/
+					/********************************************/
+
+					var serie_x = this.graphs['x'].newSerie("seriex" )
+						.setLabel( "My serie" )
+						.autoAxis()
+						.setData( series.x.spectra[ 0 ].data[ 0 ] );
+
+					serie_x.getYAxis().setDisplay( false ).togglePrimaryGrid( false ).toggleSecondaryGrid( false );
+					serie_x.getXAxis().flip(true).setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setTickPosition( 'outside' )
+
+					var serie_y = this.graphs['y'].newSerie("seriey", { flip: true } )
+						.setLabel( "My serie" )
+						.setXAxis( this.graphs['y'].getBottomAxis( ) )
+						.setYAxis( this.graphs['y'].getRightAxis( ) )
+						.setData( series.y.spectra[ 0 ].data[ 0 ] );
+
+					serie_y.getYAxis().setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).flip( true ).setTickPosition( 'outside' );
+					serie_y.getXAxis().togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setDisplay( false ).flip( true );
+
+
+					var serie_2d = this.graphs[ '_2d' ].newSerie("serie2d", { }, 'contour' )
+						.setLabel( "My serie" )
+						.autoAxis()
+						.setData( series.twoD.contourLines )
+
+					serie_2d.getXAxis().forceMin( serie_x.getXAxis().getMinValue( ) );
+					serie_2d.getXAxis().forceMax( serie_x.getXAxis().getMaxValue( ) );
+
+					serie_2d.getYAxis().forceMin( serie_y.getYAxis().getMinValue( ) );
+					serie_2d.getYAxis().forceMax( serie_y.getYAxis().getMaxValue( ) );
+
+					serie_2d.getXAxis().setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setDisplay( false ).flip( true );
+					serie_2d.getYAxis().togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setDisplay( false ).flip( true );
+
+
+
+					if( options.lineColor ) {
+						serie_x.setLineColor( options.lineColor );
+						serie_y.setLineColor( options.lineColor );
+						serie_2d.setLineColor( options.lineColor );
+					}
+
+
+					if( options.lineWidth ) {
+						serie_x.setLineWidth( options.lineWidth );
+						serie_y.setLineWidth( options.lineWidth );
+						serie_2d.setLineWidth( options.lineWidth );
+					}
+
+
+					if( options.setLineStyle ) {
+						serie_x.setLineStyle( options.lineStyle );
+						serie_y.setLineStyle( options.lineStyle );
+						serie_2d.setLineStyle( options.lineStyle );
+					}
+
+					/********************************************/
+					/** DRAW ALL ********************************/
+					/********************************************/
+
+					this.graphs['y'].redraw( );
+					this.graphs['y'].drawSeries();	
+
+					this.graphs['x'].redraw( );	
+					this.graphs['x'].drawSeries();	
+
+					this.graphs[ '_2d' ].redraw( );
+					this.graphs[ '_2d' ].drawSeries();
+
+
+				break;
+
+			}
 
 			if( this.options.molecule ) {
 
@@ -708,57 +859,7 @@
 			} );
 			
 
-			/********************************************/
-			/** LOAD SERIES *****************************/
-			/********************************************/
-
-			var serie_x = this.graphs['x'].newSerie("seriex" )
-				.setLabel( "My serie" )
-				.autoAxis()
-				.setData( this.data.x.spectra[ 0 ].data[ 0 ] );
-
-			serie_x.getYAxis().setDisplay( false ).togglePrimaryGrid( false ).toggleSecondaryGrid( false );
-			serie_x.getXAxis().flip(true).setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setTickPosition( 'outside' )
-
-			var serie_y = this.graphs['y'].newSerie("seriey", { flip: true } )
-				.setLabel( "My serie" )
-				.setXAxis( this.graphs['y'].getBottomAxis( ) )
-				.setYAxis( this.graphs['y'].getRightAxis( ) )
-				.setData( this.data.y.spectra[ 0 ].data[ 0 ] );
-
-			serie_y.getYAxis().setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).flip( true ).setTickPosition( 'outside' );
-			serie_y.getXAxis().togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setDisplay( false ).flip( true );
-
-
-			var serie_2d = this.graphs[ '_2d' ].newSerie("serie2d", { }, 'contour' )
-				.setLabel( "My serie" )
-				.autoAxis()
-				.setData( this.data.twoD.contourLines )
-
-			serie_2d.getXAxis().forceMin( serie_x.getXAxis().getMinValue( ) );
-			serie_2d.getXAxis().forceMax( serie_x.getXAxis().getMaxValue( ) );
-
-
-			serie_2d.getYAxis().forceMin( serie_y.getYAxis().getMinValue( ) );
-			serie_2d.getYAxis().forceMax( serie_y.getYAxis().getMaxValue( ) );
-
-
-			serie_2d.getXAxis().setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setDisplay( false ).flip( true );
-			serie_2d.getYAxis().togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setDisplay( false ).flip( true );
-
-
-			/********************************************/
-			/** DRAW ALL ********************************/
-			/********************************************/
-
-			this.graphs['y'].redraw( );
-			this.graphs['y'].drawSeries();	
-
-			this.graphs['x'].redraw( );	
-			this.graphs['x'].drawSeries();	
-
-			this.graphs[ '_2d' ].redraw( );
-			this.graphs[ '_2d' ].drawSeries();
+		
 
 		}
 
@@ -830,18 +931,7 @@
 
 			this.graphs[ 'x' ].setHeight(300);
 
-			/********************************************/
-			/** LOAD SERIES *****************************/
-			/********************************************/
-
-			var serie_x = this.graphs[ 'x' ].newSerie("seriex" )
-				.setLabel( "My serie" )
-				.autoAxis()
-				.setData( this.data.x.spectra[ 0 ].data[ 0 ] );
-
-			serie_x.getYAxis().setDisplay( false ).togglePrimaryGrid( false ).toggleSecondaryGrid( false );
-			serie_x.getXAxis().flip(true).setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setTickPosition( 'outside' )
-
+		
 		
 			/********************************************/
 			/** DRAW ALL ********************************/

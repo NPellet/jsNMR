@@ -24,6 +24,42 @@ require([ '../src/nmr.js' ], function( NMRHandler ) {
 
 	var nmr = new NMRHandler({
 				
+		dom: $("#nmr2"),
+		mode: '1d',
+		symmetric: true,
+	});
+
+	nmr.load( {
+
+		urls: {
+			twoD: '../lib/components/jcampconverter/data/indometacin/cosy.dx',
+			x: '../lib/components/jcampconverter/data/indometacin/1h.dx', 
+		},
+
+		molecule: '../lib/components/VisuMol/moleculeA.json',
+
+
+		lineColor: 'green'
+
+	})
+
+
+	nmr.load( {
+
+		urls: {
+			x: '../test/sqzdec1.jdx', 
+		},
+
+		lineColor: 'blue'
+
+	});
+
+
+/*
+
+
+	var nmr = new NMRHandler({
+				
 			dom: $("#nmr2"),
 
 			mode: '2d',
@@ -40,6 +76,8 @@ require([ '../src/nmr.js' ], function( NMRHandler ) {
 
 
 		});
+
+*/
 });
 
 
