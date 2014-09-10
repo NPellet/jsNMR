@@ -719,6 +719,10 @@
 					'graph.plugin.shape': { shift: true, ctrl: false }
 				},
 
+				wheel: {
+					type: 'toSeries'
+				},
+
 				onBeforeNewShape: function() {
 
 					if( ! this.selectedSerie ) {
@@ -727,6 +731,10 @@
 				}
 
 			} );
+
+	
+			var legend = this.graphs[ '_2d' ].makeLegend( { frame: true, frameColor: 'grey', frameWidth: 1, movable: true } );
+			legend.setPosition( { x: '20px', y: '20px' } );
 
 
 
