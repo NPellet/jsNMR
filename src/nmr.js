@@ -547,6 +547,10 @@
 						serie_2d.setDynamicColor( options.twoDColor );
 					}
 
+					if( options.twoDNegative ) {
+						serie_2d.setNegative( true );
+					}
+
 					if( options.lineWidth ) {
 						serie_x.setLineWidth( options.lineWidth );
 						serie_y.setLineWidth( options.lineWidth );
