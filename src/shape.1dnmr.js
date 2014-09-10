@@ -1,9 +1,9 @@
 
-define( [ 'require', 'graphs/shapes/graph.shape.line' ], function( require, GraphLine ) {
+define( [ 'require' ], function( require ) {
 
 	"use strict";
 	var lineHeight = 5;
-
+	var GraphLine = Graph.getBuild( './shapes/graph.shape.line' )
 	var GraphNmrSignal1D = function( graph, options ) {
 
 		this.options = options || {};
@@ -19,9 +19,11 @@ define( [ 'require', 'graphs/shapes/graph.shape.line' ], function( require, Grap
 								} );
 
 	}
+
 	$.extend(GraphNmrSignal1D.prototype, GraphLine.prototype, {
 		
 		createDom: function() {
+
 			this._dom = document.createElementNS(this.graph.ns, 'line');
 			this.maxLines = 64;
 			this.nbLines = 0;
@@ -81,7 +83,7 @@ define( [ 'require', 'graphs/shapes/graph.shape.line' ], function( require, Grap
 			    //TODO How to know the base of the spectrum?????
 			    var baseLine = this._getPosition( { x: 12 } );
 				var x1 = this._getPosition( { x: peaks[i][0] } );
-				if( x1.x && this.currentPos2y && this.currentPos1y && i<this.maxLines ) {
+				if( this.lines[i] && x1.x && this.currentPos2y && this.currentPos1y && i<this.maxLines ) {
 					this.lines[i].setAttribute('stroke', 'green');
 					this.lines[i].setAttribute('x1', x1.x );
 					this.lines[i].setAttribute('x2', x1.x );
@@ -92,10 +94,13 @@ define( [ 'require', 'graphs/shapes/graph.shape.line' ], function( require, Grap
 				}
 			}
 			for(var i=peaks.length;i<this.nbLines;i++){
-			    this.lines[i].setAttribute('y1', parseFloat(this.lines[i].getAttribute('y2')));
-			    this.lines[i].setAttribute('x1', -1000000 );
-				this.lines[i].setAttribute('x2', -1000000 );
-				this.lines[i].setAttribute('on', false );
+
+				if( this.lines[i] ) {
+				    this.lines[i].setAttribute('y1', parseFloat(this.lines[i].getAttribute('y2')));
+				    this.lines[i].setAttribute('x1', -1000000 );
+					this.lines[i].setAttribute('x2', -1000000 );
+					this.lines[i].setAttribute('on', false );
+				}
 			}
 
 			this.nbLines = peaks.length;
@@ -215,7 +220,7 @@ define( [ 'require', 'graphs/shapes/graph.shape.line' ], function( require, Grap
 					else
 					{
 						//TODO: nested peaks
-						console.log(possible);
+					//	console.log(possible);
 					}
 			}
 			//console.log(signals);

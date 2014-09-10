@@ -121,6 +121,7 @@
 
 			makeNMRIntegral( nmr, mode, integral ).then( function( nmrint ) {
 
+				nmrint.setSerie( integral.getSerie() );
 				integral.integral = nmrint;
 				nmrint.data.pos = integral.getFromData( 'pos' );
 				nmrint.data.pos2 = integral.getFromData( 'pos2' );//integral.getFromData( 'pos2' );
@@ -219,17 +220,32 @@
 
 		function makePeakPosition( nmr, mode ) {
 
-			return nmr.graphs[ mode ].makeShape( $.extend( true, {}, nmr.nmrSignal1dOptions[ mode ] ), {} );
+			var creator = nmr.graphs[ mode ].newShape( $.extend( true, {}, nmr.nmrSignal1dOptions[ mode ] ), {} );
+
+			if( ! creator ) {
+				creator = $.Deferred().reject();
+			}
+
+			return creator;
 		}
 
 		function makeNMRIntegral( nmr, mode, integral ) {
 
-			return nmr.graphs[ mode ].makeShape( $.extend( true, {}, nmr.nmrIntegralOptions[ mode ] ), {} ).then( function( nmrint ) {
+			var creator = nmr.graphs[ mode ].newShape( $.extend( true, {}, nmr.nmrIntegralOptions[ mode ] ), {} );
 
-				nmr.integrals[ mode ].push( nmrint );
-				nmrint.draw();
-				return nmrint;
-			} );
+			if( ! creator ) {
+				creator = $.Deferred().reject();
+			} else {
+
+				creator.then( function( nmrint ) {
+
+					nmr.integrals[ mode ].push( nmrint );
+					nmrint.draw();
+					return nmrint;
+				} );
+			}
+
+			return creator;
 		}
 		
 
@@ -410,6 +426,8 @@
 
 					if( load.urls.y ) {
 						urls.y = load.urls.y;
+					} else if( this.isSymmetric() ) {
+						urls.y = urls.x;
 					}
 
 				
@@ -525,6 +543,9 @@
 						serie_2d.setLineColor( options.lineColor );
 					}
 
+					if( options.twoDColor ) {
+						serie_2d.setDynamicColor( options.twoDColor );
+					}
 
 					if( options.lineWidth ) {
 						serie_x.setLineWidth( options.lineWidth );
@@ -619,7 +640,7 @@
 						pos.x = ( pos.x + data.pos2.x ) / 2;
 						pos.y = ( pos.y + data.pos2.y ) / 2;
 
-						this.makeShape( {
+						this.newShape( {
 
 							type: 'cross',
 							pos: pos,
@@ -696,6 +717,13 @@
 				pluginAction: {
 					'graph.plugin.zoom': { shift: false, ctrl: false },
 					'graph.plugin.shape': { shift: true, ctrl: false }
+				},
+
+				onBeforeNewShape: function() {
+
+					if( ! this.selectedSerie ) {
+						return false;
+					}
 				}
 
 			} );
@@ -787,6 +815,13 @@
 				pluginAction: {
 					'graph.plugin.zoom': { shift: false, ctrl: false },
 					'graph.plugin.shape': { shift: true, ctrl: false }
+				},
+
+				onBeforeNewShape: function() {
+
+					if( ! this.selectedSerie ) {
+						return false;
+					}
 				}
 
 			} );
@@ -854,7 +889,14 @@
 				paddingBottom: 0,
 				paddingTop: 0,
 				paddingLeft: 0,
-				paddingRight: 10
+				paddingRight: 10,
+
+				onBeforeNewShape: function() {
+
+					if( ! this.selectedSerie ) {
+						return false;
+					}
+				}
 
 			} );
 			
@@ -924,6 +966,14 @@
 				pluginAction: {
 					'graph.plugin.zoom': { shift: false, ctrl: false },
 					'graph.plugin.shape': { shift: true, ctrl: false }
+				},
+
+				onBeforeNewShape: function() {
+
+
+					if( ! this.selectedSerie ) {
+						return false;
+					}
 				}
 
 			} );
