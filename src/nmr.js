@@ -503,7 +503,7 @@
 					/** LOAD SERIES *****************************/
 					/********************************************/
 
-					var serie_x = this.graphs['x'].newSerie("seriex" )
+					var serie_x = this.graphs['x'].newSerie("seriex" , { useSlots: true })
 						.setLabel( "My serie" )
 						.autoAxis()
 						.setData( series.x.spectra[ 0 ].data[ 0 ] );
@@ -511,7 +511,7 @@
 					serie_x.getYAxis().setDisplay( false ).togglePrimaryGrid( false ).toggleSecondaryGrid( false );
 					serie_x.getXAxis().flip(true).setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setTickPosition( 'outside' )
 
-					var serie_y = this.graphs['y'].newSerie("seriey", { flip: true } )
+					var serie_y = this.graphs['y'].newSerie("seriey", { flip: true, useSlots: true } )
 						.setLabel( "My serie" )
 						.setXAxis( this.graphs['y'].getBottomAxis( ) )
 						.setYAxis( this.graphs['y'].getRightAxis( ) )
@@ -550,6 +550,10 @@
 					if( options.twoDNegative ) {
 						serie_2d.setNegative( true );
 					}
+
+					serie_2d.setShapeZoom( this.shapeZoom );
+					this.shapeZoom.setSerie( serie_2d );
+					this.shapeZoom.addSerie( serie_2d );
 
 					if( options.lineWidth ) {
 						serie_x.setLineWidth( options.lineWidth );
@@ -725,14 +729,15 @@
 
 				wheel: {
 					type: 'toSeries'
-				},
+				}/*,
 
 				onBeforeNewShape: function() {
 
 					if( ! this.selectedSerie ) {
 						return false;
 					}
-				}
+				}*/
+
 
 			} );
 
@@ -740,7 +745,17 @@
 			var legend = this.graphs[ '_2d' ].makeLegend( { frame: true, frameColor: 'grey', frameWidth: 1, movable: true } );
 			legend.setPosition( { x: '20px', y: '20px' } );
 
+			this.graphs[ '_2d' ].newShape( {
+				type: 'zoom2d',
+				pos: { x: 'min', dx: '-40px', y: 'max', dy: '-220px' }
+			}).then( function( shape ) {
 
+				shape.draw();
+				shape.redraw();
+
+				self.shapeZoom = shape;
+
+			});
 
 			/** LOAD X **********************************/	
 
