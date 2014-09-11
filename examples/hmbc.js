@@ -151,10 +151,5 @@ require([ '../src/nmr.js' ], function( NMRHandler ) {
 
 		twoDNegative: true
 	});
-
-
 });
-
-
-
 
