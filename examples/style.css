@@ -37,3 +37,9 @@ body {
     width: 100%;
     box-sizing: border-box;
     padding-top: 10px; }
+
+.nmr-table-wrapper {
+  position: relative;
+  height: 650px;
+  width: 650px;
+}

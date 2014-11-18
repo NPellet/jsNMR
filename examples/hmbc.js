@@ -127,7 +127,8 @@ require([ '../src/nmr.js' ], function( NMRHandler ) {
 			toNegative: { h: 100, s: 1, l: 0.3 }
 		},
 
-		twoDNegative: true
+		twoDNegative: true,
+		label: 'Chemical 1'
 	});
 
 	nmr.load( {
@@ -149,7 +150,8 @@ require([ '../src/nmr.js' ], function( NMRHandler ) {
 			toNegative: { h: 220, s: 1, l: 0.3 }
 		},
 
-		twoDNegative: true
+		twoDNegative: true,
+		label: 'Chemical 2'
 	});
 });
 

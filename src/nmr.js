@@ -67,7 +67,7 @@
 				}
 
 				nmr.series.push( urls );
-				nmr.loaded( urls, options );
+				nmr.loaded( urls, options, "a" + Math.random() );
 			} );
 		}
 
@@ -95,7 +95,7 @@
 				nmr.integrals[ mode ][ i ].setLabelText( 0 );
 			}
 
-
+			
 			if( nmr.isSymmetric( ) && ! noLoop ) {
 				integral_resizemove( nmr, getOtherMode( nmr, mode ), true );
 			}
@@ -119,6 +119,8 @@
 
 		function integralCreated( nmr, mode, integral ) {
 
+			integral.setSerie( nmr.graphs[ mode ].selectedSerie );
+
 			makeNMRIntegral( nmr, mode, integral ).then( function( nmrint ) {
 
 				nmrint.setSerie( integral.getSerie() );
@@ -138,6 +140,7 @@
 
 					integral.syncTo = shape;
 					shape.syncTo = integral;
+					shape.setSerie( nmr.graphs[ otherMode ].selectedSerie );
 
 					shape.data.pos = {};
 					shape.data.pos2 = {};
@@ -150,6 +153,10 @@
 					makeNMRIntegral( nmr, otherMode ).then( function( nmrint ) {
 
 						shape.integral = nmrint;
+
+						nmrint.setSerie( shape.getSerie( ) );
+					
+
 						nmrint.data.pos = shape.getFromData( 'pos' );
 						nmrint.data.pos2 = shape.getFromData( 'pos2' );
 
@@ -291,7 +298,7 @@
 
 				case '2d':
 
-					nmr.options.dom.append('<table cellpadding="0" cellspacing="0" class="nmr-wrapper"><tr><td></td><td class="nmr-1d nmr-1d-x nmr-main"></td></tr><tr class="nmr-main"><td class="nmr-1d nmr-1d-y"></td><td class="nmr-2d"></td></tr></table>');
+					nmr.options.dom.append('<div class="nmr-table-wrapper"><div class="nmr-2d-map" style="width: 150px; height: 150px; position: absolute; right: 0; bottom: 0"></div><table cellpadding="0" cellspacing="0" class="nmr-wrapper"><tr><td></td><td class="nmr-1d nmr-1d-x nmr-main" style="width: 500px; height: 150px;"></td></tr><tr class="nmr-main"><td class="nmr-1d nmr-1d-y"style="height: 500px; width: 150px;"></td><td class="nmr-2d" style="height: 500px; width: 500px;"></td></tr></table></div>');
 					nmr.makeGraphs2D();
 				break;
 
@@ -304,6 +311,7 @@
 			this.options = $.extend( true, {}, defaults, options );
 			this.series = [];
 
+			this.minimapClip;
 			// 1D
 	
 			this.nmrIntegralOptions = {
@@ -339,7 +347,7 @@
 					shapeOptions: {
 
 						horizontal: true, 
-						forcedCoords: { y: "20px" },
+						forcedCoords: { y: function( shape ) {  return ( 20 + shape.serie.getIndex() * 5 ) + "px"; } },
 						bindable: true,
 						axis: 'x'
 					}
@@ -395,7 +403,7 @@
 
 				case '1d':
 					this.legend = this.graphs.x.makeLegend( { frame: true, frameWidth: 2, frameColor: 'grey', movable: true, backgroundColor: 'white' } );
-					this.legend.setPosition( { x: "20px", y: "40px" });
+					this.legend.setPosition( { x: "300px", y: "40px" }, 'right' );
 
 				break;
 			}
@@ -442,7 +450,17 @@
 				break;
 			}
 
+
 			fetchUrls( this, urls, load );
+
+			if( load.molecule ) {
+
+				loadMolecule( load.molecule, this.options.dom );
+
+				new Assignation( this.options.dom, this.graphs );
+			}
+
+
 		}
 
 
@@ -458,7 +476,7 @@
 			return this.options.dom;
 		}
 
-		NMR.prototype.loaded = function( series, options ) {
+		NMR.prototype.loaded = function( series, options, name ) {
 
 
 			switch( this.getMode() ) {
@@ -466,7 +484,7 @@
 				case '1d':
 
 
-					var serie_x = this.graphs[ 'x' ].newSerie("seriex", { useSlots: true } )
+					var serie_x = this.graphs[ 'x' ].newSerie(name, { label: options.label, useSlots: true } )
 						.setLabel( "My serie" )
 						.autoAxis()
 						.setData( series.x.spectra[ 0 ].data[ 0 ] )
@@ -503,7 +521,7 @@
 					/** LOAD SERIES *****************************/
 					/********************************************/
 
-					var serie_x = this.graphs['x'].newSerie("seriex" , { useSlots: true })
+					var serie_x = this.graphs['x'].newSerie(name , { label: options.label, useSlots: true })
 						.setLabel( "My serie" )
 						.autoAxis()
 						.setData( series.x.spectra[ 0 ].data[ 0 ] );
@@ -511,7 +529,7 @@
 					serie_x.getYAxis().setDisplay( false ).togglePrimaryGrid( false ).toggleSecondaryGrid( false );
 					serie_x.getXAxis().flip(true).setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setTickPosition( 'outside' )
 
-					var serie_y = this.graphs['y'].newSerie("seriey", { flip: true, useSlots: true } )
+					var serie_y = this.graphs['y'].newSerie(name, { label: options.label, flip: true, useSlots: true } )
 						.setLabel( "My serie" )
 						.setXAxis( this.graphs['y'].getBottomAxis( ) )
 						.setYAxis( this.graphs['y'].getRightAxis( ) )
@@ -521,7 +539,7 @@
 					serie_y.getXAxis().togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setDisplay( false ).flip( true );
 
 
-					var serie_2d = this.graphs[ '_2d' ].newSerie("serie2d", { }, 'contour' )
+					var serie_2d = this.graphs[ '_2d' ].newSerie(name, { label: options.label }, 'contour' )
 						.setLabel( "My serie" )
 						.autoAxis()
 						.setData( series.twoD.contourLines )
@@ -532,10 +550,26 @@
 					serie_2d.getYAxis().forceMin( serie_y.getYAxis().getMinValue( ) );
 					serie_2d.getYAxis().forceMax( serie_y.getYAxis().getMaxValue( ) );
 
-					serie_2d.getXAxis().setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setDisplay( false ).flip( true );
-					serie_2d.getYAxis().togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setDisplay( false ).flip( true );
 
+					if( this.options.minimap && this.graphs[ '_2d-minimap' ] ) {
 
+						
+						var serie_2d_minimap = this.graphs[ '_2d-minimap' ].newSerie("serie2d", { label: options.label }, 'contour' )
+							.autoAxis()
+							.setData( series.twoD.contourLines )
+
+						serie_2d_minimap.getXAxis().forceMin( serie_x.getXAxis().getMinValue( ) );
+						serie_2d_minimap.getXAxis().forceMax( serie_x.getXAxis().getMaxValue( ) );
+
+						serie_2d_minimap.getYAxis().forceMin( serie_y.getYAxis().getMinValue( ) );
+						serie_2d_minimap.getYAxis().forceMax( serie_y.getYAxis().getMaxValue( ) );
+
+						this.minimapClip.setSerie( serie_2d_minimap );
+
+						this.graphs[ '_2d-minimap' ].redraw( );
+						this.graphs[ '_2d-minimap' ].drawSeries();
+
+					}
 
 					if( options.lineColor ) {
 						serie_x.setLineColor( options.lineColor );
@@ -586,12 +620,6 @@
 
 			}
 
-			if( this.options.molecule ) {
-
-				loadMolecule( this.options.molecule, this.options.dom );
-
-				new Assignation( this.options.dom, this.graphs );
-			}
 
 		}
 
@@ -606,7 +634,7 @@
 			dom.appendChild( molecule.getDom() );
 
 			// Set the size of the canvas
-			molecule.resize( 300, 200 );
+			molecule.resize( 150, 100 );
 
 			// Fetches the JSON and uses it as the source data
 			molecule.setDataFromJSONFile( molUrl ).then( function() {
@@ -682,6 +710,7 @@
 						onZoomStart: function( graph, x, y, e, target ) {
 							self.graphs['x']._pluginExecute( 'graph.plugin.zoom', 'onMouseDown', [ self.graphs['x'], x, y, e, true ] );
 							self.graphs['y']._pluginExecute( 'graph.plugin.zoom', 'onMouseDown', [ self.graphs['y'], x, y, e, true ] );
+
 						},
 
 						onZoomMove: function( graph, x, y, e, target ) {
@@ -689,9 +718,22 @@
 							self.graphs['y']._pluginExecute( 'graph.plugin.zoom', 'onMouseMove', [ self.graphs['y'], x, y, e, true ] );
 						},
 
-						onZoomEnd: function( graph, x, y, e, target ) {
+						onZoomEnd: function( graph, x, y, e, target, x1, y1 ) {
 							self.graphs['x']._pluginExecute( 'graph.plugin.zoom', 'onMouseUp', [ self.graphs['x'], x, y, e, true ] );
 							self.graphs['y']._pluginExecute( 'graph.plugin.zoom', 'onMouseUp', [ self.graphs['y'], x, y, e, true ] );
+
+							var x = graph.getBottomAxis().getVal( x1 );
+							var x2 = graph.getBottomAxis().getVal( x );
+
+							var y = graph.getLeftAxis().getVal( y1 );
+							var y2 = graph.getLeftAxis().getVal( y );
+
+							if( self.options.minimap ) {
+								self.minimapClip.data.pos = { x: x, y: y };
+								self.minimapClip.data.pos2 = { x: x2, y: y2 };
+
+								self.minimapClip.redraw();
+							}
 						},
 
 						onDblClick: function( x, y, prefs, e ) {
@@ -736,26 +778,139 @@
 					if( ! this.selectedSerie ) {
 						return false;
 					}
-				}*/
+				}*/,
+
+				onSelectSerie: function( serie ) {
+
+					self.graphs[ 'x' ].selectSerie( self.graphs[ 'x' ].getSerie( serie.getName() ) );
+					self.graphs[ 'y' ].selectSerie( self.graphs[ 'y' ].getSerie( serie.getName() ) );
+				},
+
+				onUnselectSerie: function( serie ) {
+
+					self.graphs[ 'x' ].unselectSerie( self.graphs[ 'x' ].getSerie( serie.getName() ) );
+					self.graphs[ 'y' ].unselectSerie( self.graphs[ 'y' ].getSerie( serie.getName() ) );
+				}
+
 
 
 			} );
+
+
+		
+
+			/** LOAD 2D *********************************/
+			if( this.options.minimap ) {
+				$(".nmr-2d-map").each( function() {
+
+					self.graphs[ '_2d-minimap' ] = new Graph( this, {
+
+					} );
+
+					var whole;
+				    $.when(
+
+				        self.graphs[ '_2d-minimap' ].newShape({ pos: { x: 'min', y: 'min' }, pos2: { x: 'max', y: 'max' }, type: 'rect', fillColor: 'rgba( 100, 100, 100, 0.4 )' }).then( function( shape ) {
+
+				        	whole = shape;
+				        	shape.draw();
+				        	shape.redraw();
+				            shape.setSelectable( false );
+				            shape.setMovable( false );
+
+				        }),
+
+				        self.graphs[ '_2d-minimap' ].newShape({ pos: { x: 'min', y: 'min' }, pos2: { x: 'max', y: 'max' }, type: 'rect', fillColor: 'transparent', shapeOptions: { masker: true } }).then( function( shape ) {
+
+				            shape.staticHandles( true );
+
+				            self.minimapClip = shape;
+
+				            shape.draw();
+				            shape.redraw();
+				        })
+
+
+
+				    ).then( function() {
+
+				    	whole.maskWith( self.minimapClip );
+				    });
+
+
+					  self.graphs[ '_2d-minimap' ].shapeHandlers.onChange.push( function( shape ) {
+
+			            if( shape == self.minimapClip ) {
+
+			                var p = self.minimapClip.data.pos;
+			                var p2 = self.minimapClip.data.pos2;
+
+
+							p.x = self.graphs[ '_2d-minimap' ].getValPosition( p.x, shape.serie.getXAxis() );
+							p.y = self.graphs[ '_2d-minimap' ].getValPosition( p.y, shape.serie.getYAxis() );
+							p2.x = self.graphs[ '_2d-minimap' ].getValPosition( p2.x, shape.serie.getXAxis() );
+							p2.y = self.graphs[ '_2d-minimap' ].getValPosition( p2.y, shape.serie.getYAxis() );
+
+
+							if( isNaN( p.x ) || isNaN( p2.x ) || isNaN( p.y ) || isNaN( p2.y ) ) {
+								return;
+							}
+
+			                self.graphs[ '_2d' ].getXAxis().zoom( p.x, p2.x );
+			                self.graphs[ '_2d' ].getYAxis().zoom( p.y, p2.y );
+
+			                self.graphs[ '_2d' ].redraw();
+			                self.graphs[ '_2d' ].drawSeries();
+
+			                self.graphs[ 'x' ].getXAxis().zoom( p.x, p2.x );
+			                
+
+			                self.graphs[ 'x' ].redraw();
+			                self.graphs[ 'x' ].drawSeries();
+			                
+			                
+			                self.graphs[ 'y' ].getYAxis().zoom( p.y, p2.y );
+
+			                self.graphs[ 'y' ].redraw();
+			                self.graphs[ 'y' ].drawSeries();
+			                
+			            }
+			        } );
+
+
+					self.graphs[ '_2d-minimap' ].getXAxis().setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setDisplay( false ).flip( true );
+					self.graphs[ '_2d-minimap' ].getYAxis().togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setDisplay( false ).flip( true );
+
+					self.graphs[ '_2d-minimap' ].getXAxis().setAxisDataSpacing( 0 );
+					self.graphs[ '_2d-minimap' ].getYAxis().setAxisDataSpacing( 0 );
+
+
+
+				});
+			}
+		
+			self.graphs[ '_2d' ].getXAxis().setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setDisplay( false ).flip( true );
+			self.graphs[ '_2d' ].getYAxis().togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setDisplay( false ).flip( true );
+
+			self.graphs[ '_2d' ].getXAxis().setAxisDataSpacing( 0 );
+			self.graphs[ '_2d' ].getYAxis().setAxisDataSpacing( 0 );
 
 	
 			var legend = this.graphs[ '_2d' ].makeLegend( { frame: true, frameColor: 'grey', frameWidth: 1, movable: true } );
 			legend.setPosition( { x: '20px', y: '20px' } );
 
 			this.graphs[ '_2d' ].newShape( {
+
 				type: 'zoom2d',
-				pos: { x: 'min', dx: '-40px', y: 'max', dy: '-220px' }
-			}).then( function( shape ) {
+				pos: { x: 'min', dx: '-210px', y: 'max', dy: '-130px' }
+
+			} ).then( function( shape ) {
 
 				shape.draw();
 				shape.redraw();
-
 				self.shapeZoom = shape;
 
-			});
+			} );
 
 			/** LOAD X **********************************/	
 
@@ -792,6 +947,7 @@
 
 					integral_resizemove( self, 'x' );
 
+					
 					if( self.isSymmetric() ) {
 						integral_resizemove( self, 'y' );
 					}
@@ -846,12 +1002,24 @@
 
 				onBeforeNewShape: function() {
 
-					if( ! this.selectedSerie ) {
+					if( ! self.graphs['_2d'].selectedSerie ) {
 						return false;
 					}
 				}
 
 			} );
+
+
+			  self.graphs[ 'x' ].shapeHandlers.onCreated.push( function( shape ) {
+
+			  	if( shape.data.url == "src/shape.1dnmr") {
+
+			  		shape.set('strokeColor', shape.serie.getLineColor() );
+			  		shape.setStrokeColor();
+			  	}
+
+			} );
+
 
 
 			/** LOAD Y **********************************/
@@ -920,16 +1088,13 @@
 
 				onBeforeNewShape: function() {
 
-					if( ! this.selectedSerie ) {
+					if( ! self.graphs['_2d'].selectedSerie ) {
 						return false;
 					}
 				}
 
 			} );
 			
-
-		
-
 		}
 
 
@@ -949,13 +1114,15 @@
 				onAnnotationChange: function( data, shape ) {
 
 
-					if( data.type == "nmrsignal1d" ) {
+					if( data.url == "src/shape.1dnmr" ) {
 
 						if( ! self.integralBasis ) {
 							self.integralBasis = shape.integral.lastSum;
 						}
 
+
 					} else if( data.type == "nmrintegral" ) {
+
 
 						if( self.integralBasis ) {
 
@@ -996,7 +1163,6 @@
 				},
 
 				onBeforeNewShape: function() {
-
 
 					if( ! this.selectedSerie ) {
 						return false;

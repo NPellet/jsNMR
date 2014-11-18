@@ -106,7 +106,8 @@ require([ '../src/nmr.js' ], function( NMRHandler ) {
 				
 			dom: $("#nmr2"),
 			mode: '2d',
-			symmetric: true
+			symmetric: true,
+			minimap: false
 	});
 
 	nmr.load( {
@@ -125,9 +126,10 @@ require([ '../src/nmr.js' ], function( NMRHandler ) {
 
 			fromNegative: { h: 100, s: 0.3, l: 0.5  },
 			toNegative: { h: 100, s: 1, l: 0.3 }
-		}
+		},
+		label: 'Chemical 1'
 	});
-
+/*
 	nmr.load( {
 
 		urls: {
@@ -145,8 +147,9 @@ require([ '../src/nmr.js' ], function( NMRHandler ) {
 
 			fromNegative: { h: 220, s: 0.3, l: 0.5  },
 			toNegative: { h: 220, s: 1, l: 0.3 }
-		}
-	});
+		},
+		label: 'Chemical 2'
+	});*/
 
 
 });

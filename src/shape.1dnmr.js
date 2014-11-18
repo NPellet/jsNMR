@@ -75,6 +75,7 @@ define( [ 'require' ], function( require ) {
 			this.setBindableToDom( this._dom );
 		},
 
+
 		redrawLines: function( height ) {
 
 			var peaks = this.findxs();
