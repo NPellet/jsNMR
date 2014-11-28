@@ -26,8 +26,7 @@
 			var fetching = [];
 
 			for( var i in urls ) {
-
-				fetching.push( $.get( urls[ i ] ).then( function( data ) { return JcampConverter( data ) } ) );
+				fetching.push( $.get( urls[ i ] ).then( function( data ) { return JcampConverter.convert( data ) } ) );
 			}
 
 			if( ! nmr.divLoading ) {
@@ -119,7 +118,12 @@
 
 		function integralCreated( nmr, mode, integral ) {
 
-			integral.setSerie( nmr.graphs[ mode ].selectedSerie );
+			if( nmr.graphs[ mode ].selectedSerie ) {
+				integral.setSerie( nmr.graphs[ mode ].selectedSerie );	
+			} else {
+				integral.setSerie( nmr.graphs[ mode ].getSerie( 0 ) );	
+			}
+			
 
 			makeNMRIntegral( nmr, mode, integral ).then( function( nmrint ) {
 
@@ -212,13 +216,11 @@
 			}
 
 			if( peak.syncTo ) {
-
 				peak.syncTo.kill();
 				nmr.integrals[ getOtherMode( mode ) ].splice( nmr.integrals[ getOtherMode( nmr, mode ) ].indexOf( peak.syncTo.integral ), 1 );
 			}
 
 			integral_resizemove( nmr, mode );
-
 		}
 
 		function getOtherMode( nmr, mode ) {
@@ -476,6 +478,233 @@
 			return this.options.dom;
 		}
 
+
+		NMR.prototype.resize1DTo = function( w, h ) {
+			this.graphs[ 'x' ].resize( w, h );
+			this.graphs[ 'x' ].drawSeries();
+		}
+
+		NMR.prototype.resize2DTo = function( w, h ) {
+
+			this.options.dom.find('.nmr-1d-y').css( {
+				height: h - 150,
+				width: 150
+			} );
+
+			this.graphs.y.resize( 150, h - 150 );
+
+
+			this.options.dom.find('.nmr-1d-x').css( {
+				width: w - 150,
+				height: 150
+			} );
+
+			this.graphs.x.resize( w - 150, 150 );
+
+
+			this.options.dom.find('.nmr-2d').css( {
+				width: w - 150,
+				height: h - 150
+			} );
+
+			this.graphs['_2d'].resize( w - 150, h - 150 );
+
+		}
+
+		NMR.prototype.setSerie2DX = function( name, data, options ) {
+
+			if( this.graphs[ 'x'].getSerie( name ) ) {
+				return;
+			}
+			var serie_x = this.graphs['x'].newSerie(name, { label: options.label, useSlots: true })
+				.setLabel( "My serie" )
+				.autoAxis()
+				.setData( data );
+
+			serie_x.getYAxis().setDisplay( false ).togglePrimaryGrid( false ).toggleSecondaryGrid( false );
+			serie_x.getXAxis().flip(true).setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setTickPosition( 'outside' )
+
+			if( options.lineColor ) {
+				serie_x.setLineColor( options.lineColor );
+			}
+
+			if( options.lineWidth ) {
+				serie_x.setLineWidth( options.lineWidth );
+			}
+
+			if( options.setLineStyle ) {
+				serie_x.setLineStyle( options.lineStyle );
+			}
+		}
+
+
+		NMR.prototype.setSerie2DY = function( name, data, options ) {
+
+	
+			if( this.graphs[ 'y'].getSerie( name ) ) {
+				return;
+			}
+
+			var serie_y = this.graphs['y'].newSerie(name, { label: options.label, flip: true, useSlots: true } )
+				.setLabel( "My serie" )
+				.setXAxis( this.graphs['y'].getBottomAxis( ) )
+				.setYAxis( this.graphs['y'].getRightAxis( ) )
+				.setData( data );
+
+			serie_y.getYAxis().setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).flip( true ).setTickPosition( 'outside' );
+			serie_y.getXAxis().togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setDisplay( false ).flip( true );
+
+
+			if( options.lineColor ) {
+				serie_y.setLineColor( options.lineColor );
+			}
+
+
+			if( options.lineWidth ) {
+				serie_y.setLineWidth( options.lineWidth );
+			}
+
+			if( options.setLineStyle ) {
+				serie_y.setLineStyle( options.lineStyle );
+			}
+
+
+					
+		}
+
+		NMR.prototype.setSerie2D = function( name, data, options ) {
+
+			if( this.graphs[ '_2d'].getSerie( name ) ) {
+				return;
+			}
+
+			var serie_2d = this.graphs[ '_2d' ].newSerie(name, { label: options.label }, 'contour' )
+				.setLabel( "My serie" )
+				.autoAxis()
+				.setData( data )
+/*
+			serie_2d.getXAxis().forceMin( serie_x.getXAxis().getMinValue( ) );
+			serie_2d.getXAxis().forceMax( serie_x.getXAxis().getMaxValue( ) );
+
+			serie_2d.getYAxis().forceMin( serie_y.getYAxis().getMinValue( ) );
+			serie_2d.getYAxis().forceMax( serie_y.getYAxis().getMaxValue( ) );
+
+*/
+			if( this.options.minimap && this.graphs[ '_2d-minimap' ] && 1 == 0) {
+
+				
+				var serie_2d_minimap = this.graphs[ '_2d-minimap' ].newSerie("serie2d", { label: options.label }, 'contour' )
+					.autoAxis()
+					.setData( series.twoD.contourLines )
+/*
+				serie_2d_minimap.getXAxis().forceMin( serie_x.getXAxis().getMinValue( ) );
+				serie_2d_minimap.getXAxis().forceMax( serie_x.getXAxis().getMaxValue( ) );
+
+				serie_2d_minimap.getYAxis().forceMin( serie_y.getYAxis().getMinValue( ) );
+				serie_2d_minimap.getYAxis().forceMax( serie_y.getYAxis().getMaxValue( ) );
+*/
+				this.minimapClip.setSerie( serie_2d_minimap );
+
+				this.graphs[ '_2d-minimap' ].redraw( );
+				this.graphs[ '_2d-minimap' ].drawSeries();
+
+			}
+
+			if( options.lineColor ) {
+				serie_2d.setLineColor( options.lineColor );
+			}
+
+
+			if( options.twoDColor ) {
+				serie_2d.setDynamicColor( options.twoDColor );
+			}
+
+			if( options.twoDNegative ) {
+				serie_2d.setNegative( true );
+			}
+
+			serie_2d.setShapeZoom( this.shapeZoom );
+			this.shapeZoom.setSerie( serie_2d );
+			this.shapeZoom.addSerie( serie_2d );
+
+
+			if( options.lineWidth ) {
+				serie_2d.setLineWidth( options.lineWidth );
+			}
+
+			if( options.setLineStyle ) {
+				serie_2d.setLineStyle( options.lineStyle );
+			}
+
+
+
+		}
+
+		NMR.prototype.redrawAll2D = function() {
+
+			this.graphs[ 'y' ].updateAxes();
+			this.graphs[ 'x' ].updateAxes();
+
+
+			this.graphs['y'].redraw( );
+			this.graphs['y'].drawSeries();	
+
+			this.graphs['x'].redraw( );	
+			this.graphs['x'].drawSeries();	
+
+			this.graphs[ '_2d' ].redraw( );
+			this.graphs[ '_2d' ].drawSeries();
+
+
+
+			this.graphs[ '_2d' ].getXAxis().forceMin( this.graphs['x'].getXAxis().getMinValue() );
+			this.graphs[ '_2d' ].getXAxis().forceMax( this.graphs['x'].getXAxis().getMaxValue() );
+//console.log( this.graphs['y'].getYAxis().getMinValue() );
+			this.graphs[ '_2d' ].getYAxis().forceMin( this.graphs['y'].getRightAxis().getMinValue() );
+			this.graphs[ '_2d' ].getYAxis().forceMax( this.graphs['y'].getRightAxis().getMaxValue() );
+		}
+
+
+		NMR.prototype.setSerieX = function( name, data, options ) {
+
+			if( this.graphs[ 'x' ].getSerie( name ) ) {
+
+				this.graphs[ 'x' ].getSerie( name ).kill();
+				this.graphs[ 'x' ].removeShapes();
+				this.integralBasis = false;
+
+			}
+
+			var serie_x = this.graphs[ 'x' ].newSerie(name, { label: options.label, useSlots: true } )
+				.setLabel( "My serie" )
+				.autoAxis()
+				.setData( data )
+				.XIsMonotoneous();
+
+			if( options.lineColor ) {
+				serie_x.setLineColor( options.lineColor );
+			}
+
+
+			if( options.lineWidth ) {
+				serie_x.setLineWidth( options.lineWidth );
+			}
+
+
+			if( options.setLineStyle ) {
+				serie_x.setLineStyle( options.lineStyle );
+			}
+
+			//serie_x.degrade( 1 ).kill()
+
+			serie_x.getYAxis().setDisplay( false ).togglePrimaryGrid( false ).toggleSecondaryGrid( false );
+			serie_x.getXAxis().flip(true).setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setTickPosition( 'outside' )
+
+			this.graphs.x.autoscaleAxes();
+			this.graphs.x.drawSeries();
+		}
+
+
 		NMR.prototype.loaded = function( series, options, name ) {
 
 
@@ -483,34 +712,8 @@
 
 				case '1d':
 
+					this.setSerieX( name, spectra.x.spectra[ 0 ].data[ 0 ], { label: "SomeLabel" } );
 
-					var serie_x = this.graphs[ 'x' ].newSerie(name, { label: options.label, useSlots: true } )
-						.setLabel( "My serie" )
-						.autoAxis()
-						.setData( series.x.spectra[ 0 ].data[ 0 ] )
-						.XIsMonotoneous();
-
-					if( options.lineColor ) {
-						serie_x.setLineColor( options.lineColor );
-					}
-
-
-					if( options.lineWidth ) {
-						serie_x.setLineWidth( options.lineWidth );
-					}
-
-
-					if( options.setLineStyle ) {
-						serie_x.setLineStyle( options.lineStyle );
-					}
-
-					//serie_x.degrade( 1 ).kill()
-
-					serie_x.getYAxis().setDisplay( false ).togglePrimaryGrid( false ).toggleSecondaryGrid( false );
-					serie_x.getXAxis().flip(true).setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setTickPosition( 'outside' )
-
-					this.graphs.x.autoscaleAxes();
-					this.graphs.x.drawSeries();
 
 				break;
 
@@ -521,100 +724,17 @@
 					/** LOAD SERIES *****************************/
 					/********************************************/
 
-					var serie_x = this.graphs['x'].newSerie(name , { label: options.label, useSlots: true })
-						.setLabel( "My serie" )
-						.autoAxis()
-						.setData( series.x.spectra[ 0 ].data[ 0 ] );
+					this.setSerie2DX( name, series.x.spectra[ 0 ].data[ 0 ], options );
+					this.setSerie2DY( name, series.y.spectra[ 0 ].data[ 0 ], options );
+					this.setSerie2D( name, series.twoD.contourLines, options );
 
-					serie_x.getYAxis().setDisplay( false ).togglePrimaryGrid( false ).toggleSecondaryGrid( false );
-					serie_x.getXAxis().flip(true).setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setTickPosition( 'outside' )
-
-					var serie_y = this.graphs['y'].newSerie(name, { label: options.label, flip: true, useSlots: true } )
-						.setLabel( "My serie" )
-						.setXAxis( this.graphs['y'].getBottomAxis( ) )
-						.setYAxis( this.graphs['y'].getRightAxis( ) )
-						.setData( series.y.spectra[ 0 ].data[ 0 ] );
-
-					serie_y.getYAxis().setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).flip( true ).setTickPosition( 'outside' );
-					serie_y.getXAxis().togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setDisplay( false ).flip( true );
-
-
-					var serie_2d = this.graphs[ '_2d' ].newSerie(name, { label: options.label }, 'contour' )
-						.setLabel( "My serie" )
-						.autoAxis()
-						.setData( series.twoD.contourLines )
-
-					serie_2d.getXAxis().forceMin( serie_x.getXAxis().getMinValue( ) );
-					serie_2d.getXAxis().forceMax( serie_x.getXAxis().getMaxValue( ) );
-
-					serie_2d.getYAxis().forceMin( serie_y.getYAxis().getMinValue( ) );
-					serie_2d.getYAxis().forceMax( serie_y.getYAxis().getMaxValue( ) );
-
-
-					if( this.options.minimap && this.graphs[ '_2d-minimap' ] ) {
-
-						
-						var serie_2d_minimap = this.graphs[ '_2d-minimap' ].newSerie("serie2d", { label: options.label }, 'contour' )
-							.autoAxis()
-							.setData( series.twoD.contourLines )
-
-						serie_2d_minimap.getXAxis().forceMin( serie_x.getXAxis().getMinValue( ) );
-						serie_2d_minimap.getXAxis().forceMax( serie_x.getXAxis().getMaxValue( ) );
-
-						serie_2d_minimap.getYAxis().forceMin( serie_y.getYAxis().getMinValue( ) );
-						serie_2d_minimap.getYAxis().forceMax( serie_y.getYAxis().getMaxValue( ) );
-
-						this.minimapClip.setSerie( serie_2d_minimap );
-
-						this.graphs[ '_2d-minimap' ].redraw( );
-						this.graphs[ '_2d-minimap' ].drawSeries();
-
-					}
-
-					if( options.lineColor ) {
-						serie_x.setLineColor( options.lineColor );
-						serie_y.setLineColor( options.lineColor );
-						serie_2d.setLineColor( options.lineColor );
-					}
-
-					if( options.twoDColor ) {
-						serie_2d.setDynamicColor( options.twoDColor );
-					}
-
-					if( options.twoDNegative ) {
-						serie_2d.setNegative( true );
-					}
-
-					serie_2d.setShapeZoom( this.shapeZoom );
-					this.shapeZoom.setSerie( serie_2d );
-					this.shapeZoom.addSerie( serie_2d );
-
-					if( options.lineWidth ) {
-						serie_x.setLineWidth( options.lineWidth );
-						serie_y.setLineWidth( options.lineWidth );
-						serie_2d.setLineWidth( options.lineWidth );
-					}
-
-
-					if( options.setLineStyle ) {
-						serie_x.setLineStyle( options.lineStyle );
-						serie_y.setLineStyle( options.lineStyle );
-						serie_2d.setLineStyle( options.lineStyle );
-					}
 
 					/********************************************/
 					/** DRAW ALL ********************************/
 					/********************************************/
 
-					this.graphs['y'].redraw( );
-					this.graphs['y'].drawSeries();	
-
-					this.graphs['x'].redraw( );	
-					this.graphs['x'].drawSeries();	
-
-					this.graphs[ '_2d' ].redraw( );
-					this.graphs[ '_2d' ].drawSeries();
-
+					this.redrawAll2D();
+					
 
 				break;
 
@@ -924,7 +1044,7 @@
 
 				onAnnotationChange: function( data, shape ) {
 
-					if( data.url == "src/shape.1dnmr" ) {
+					if( data.url.indexOf("shape.1dnmr") > -1 ) {
 
 						if( ! self.integralBasis ) {
 							self.integralBasis = shape.integral.lastSum;
@@ -1012,7 +1132,7 @@
 
 			  self.graphs[ 'x' ].shapeHandlers.onCreated.push( function( shape ) {
 
-			  	if( shape.data.url == "src/shape.1dnmr") {
+			  	if( shape.data.url.indexOf("src/shape.1dnmr") > -1) {
 
 			  		shape.set('strokeColor', shape.serie.getLineColor() );
 			  		shape.setStrokeColor();
@@ -1114,7 +1234,7 @@
 				onAnnotationChange: function( data, shape ) {
 
 
-					if( data.url == "src/shape.1dnmr" ) {
+					if( data.url && data.url.indexOf("shape.1dnmr") > -1 ) {
 
 						if( ! self.integralBasis ) {
 							self.integralBasis = shape.integral.lastSum;
@@ -1164,7 +1284,7 @@
 
 				onBeforeNewShape: function() {
 
-					if( ! this.selectedSerie ) {
+					if( ! this.selectedSerie && this.series.length > 1 ) {
 						return false;
 					}
 				}

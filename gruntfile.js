@@ -20,6 +20,14 @@ module.exports = function(grunt) {
                 files: {
                     './dist/jsnmr.js': [ './src/nmr.js', './src/assignation.js' ]
                 }    
+            },
+
+            toVisualizer: {
+
+                files: {
+                    '../visualizer-dev/src/components/jsNMR/src/nmr.js': 'src/nmr.js',
+                     '../visualizer-dev/src/components/jsNMR/src/shape.1dnmr.js': 'src/shape.1dnmr.js'
+                }
             }
             
         },
