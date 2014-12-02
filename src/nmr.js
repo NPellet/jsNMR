@@ -282,7 +282,14 @@
 			}
 		}
 
+		function removeSerie( nmr, axis, name ) {
 
+			var serie;
+			if( ( serie = nmr.graphs[ axis ].getSerie( name ) ) ) {
+				serie.kill();
+			}
+
+		}
 
 			
 		function doNMR( nmr ) { 
@@ -537,7 +544,6 @@
 			}
 		}
 
-
 		NMR.prototype.setSerie2DY = function( name, data, options ) {
 
 	
@@ -635,9 +641,23 @@
 			if( options.setLineStyle ) {
 				serie_2d.setLineStyle( options.lineStyle );
 			}
+		}
 
 
+		NMR.prototype.removeSerie2DX = function( name ) {
+			removeSerie( this, 'x', name );
+		}
 
+		NMR.prototype.removeSerie2DY = function( name ) {
+			removeSerie( this, 'y', name );
+		}
+
+		NMR.prototype.removeSerie2D = function( name ) {
+			removeSerie( this, '_2d', name );
+		}
+
+		NMR.prototype.removeSerieX = function( name ) {
+			removeSerie( this, 'x', name );
 		}
 
 		NMR.prototype.redrawAll2D = function() {
