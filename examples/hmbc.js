@@ -13,7 +13,7 @@ requirejs.config({
 		'components': './lib/components',
 		'graph': './lib/components/graph/dist/jsgraph',
 		'assignation': './src/assignation',
-		'jcampconverter': './lib/components/jcampconverter/src/jcampconverter',
+		'jcampconverter': './lib/components/jcampconverter/build/jcampconverter',
 		'graphs': './lib/components/graph/src'
 	}
 });
