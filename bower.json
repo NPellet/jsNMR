@@ -1,0 +1,34 @@
+{
+  "name": "jsNMR",
+  "version": "0.0.1",
+  "homepage": "https://github.com/NPellet/jsNMR/",
+  "main": [],
+  "keywords": [
+    "nmr",
+    "1d",
+    "2d",
+    "graph",
+    "COSY",
+    "HMBC",
+    "HSQC"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "examples",
+    "lib",
+    "node_modules",
+    "src",
+    "test",
+    ".bowerrc",
+    ".gitignore",
+    "gruntfile.js",
+    "package.json"
+  ],
+  "devDependencies": {
+    "requirejs": "~2.1.14"
+  },
+  "dependencies": {
+    "jcampconverter": "~2.0.1",
+    "jsgraph": "~1.10.0"
+  }
+}

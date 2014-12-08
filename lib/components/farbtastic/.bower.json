@@ -19,6 +19,5 @@
   },
   "_source": "git://github.com/mattfarina/farbtastic.git",
   "_target": "~2.0.0-alpha.1",
-  "_originalSource": "farbtastic",
-  "_direct": true
+  "_originalSource": "farbtastic"
 }
