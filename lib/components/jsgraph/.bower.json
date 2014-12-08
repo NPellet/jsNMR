@@ -1,8 +1,11 @@
 {
   "name": "jsGraph",
-  "version": "1.10.0",
+  "version": "1.10.2",
   "homepage": "http://jsgraph.org",
-  "main": "dist/jsgraph.js",
+  "main": [
+    "dist/jsgraph.js",
+    "dist/jsgraph.min.js"
+  ],
   "keywords": [
     "graph",
     "plot",
@@ -10,15 +13,14 @@
   ],
   "license": "MIT",
   "ignore": [
-    "**/.*",
-    "./lib/lib/**",
-    "./lib/components/**",
-    "package.json",
-    "README.md",
-    "*.log",
+    "examples",
+    "lib",
+    "node_modules",
+    "src",
+    ".bowerrc",
+    ".gitignore",
     "gruntfile.js",
-    "AUTHORS",
-    "bower.json"
+    "package.json"
   ],
   "devDependencies": {
     "Aristo-jQuery-UI-Theme": "https://github.com/taitems/Aristo-jQuery-UI-Theme.git",
@@ -27,14 +29,14 @@
     "jquery": "~2.1.1",
     "requirejs": "~2.1.14"
   },
-  "_release": "1.10.0",
+  "_release": "1.10.2",
   "_resolution": {
     "type": "version",
-    "tag": "v1.10.0",
-    "commit": "5945c4ca8797404808b3b7308b0fb0c5cec42c26"
+    "tag": "v1.10.2",
+    "commit": "25fd49530d17dd8043715936558fdf814fb98c3b"
   },
   "_source": "git://github.com/NPellet/jsGraph.git",
-  "_target": "~1.10.0",
+  "_target": "~1.10.2",
   "_originalSource": "jsgraph",
   "_direct": true
 }
