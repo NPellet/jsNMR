@@ -7,7 +7,7 @@
  *
  * Released under the MIT license
  *
- * Date: 2014-12-08T16:14Z
+ * Date: 2014-12-08T21:07Z
  */
 
 
@@ -1066,6 +1066,7 @@
 			self.graphs[ '_2d' ].getXAxis().setAxisDataSpacing( 0 );
 			self.graphs[ '_2d' ].getYAxis().setAxisDataSpacing( 0 );
 
+
 	
 			var legend = this.graphs[ '_2d' ].makeLegend( { frame: true, frameColor: 'grey', frameWidth: 1, movable: true } );
 			legend.setPosition( { x: '20px', y: '20px' } );
@@ -1208,6 +1209,8 @@
 			  	}
 
 			} );
+
+			self.graphs[ 'x' ].getXAxis().options.wheelBaseline = 0;
 
 
 
@@ -1392,7 +1395,8 @@ console.log( from, to );
 
 
 			this.graphs[ 'x' ].setHeight(300);
-
+			this.graphs[ 'x' ].getXAxis().options.wheelBaseline = 0;
+			
 			this.graphs[ 'x' ].shapeHandlers.onRemoved.push( function( shape ) {
 
 
@@ -1455,7 +1459,7 @@ console.log( from, to );
  * Copyright 2014 Norman Pellet
  * Released under the MIT license
  *
- * Date: 2014-12-08T16:14Z
+ * Date: 2014-12-08T21:07Z
  */
 
 (function( global, factory ) {
