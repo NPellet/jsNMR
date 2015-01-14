@@ -11,9 +11,9 @@ requirejs.config({
 		'highlightjs': './lib/lib/highlight/highlight.pack',
 		'forms': './lib/lib/forms/form',
 		'components': './lib/components',
-		'graph': './lib/components/graph/dist/jsgraph',
+		'graph': './lib/components/jsgraph/dist/jsgraph',
 		'assignation': './src/assignation',
-		'jcampconverter': './lib/components/jcampconverter/src/jcampconverter',
+		'jcampconverter': './lib/components/jcampconverter/build/jcampconverter',
 		'graphs': './lib/components/graph/src'
 	}
 });
@@ -34,7 +34,8 @@ require([ '../src/nmr.js' ], function( NMRHandler ) {
 	nmr.load( {
 
 		urls: {
-			x: '../test/cosy/121-97-1_zg.jdx', 
+			twoD: '../test/cosy/84-74-2_cosygpppqf.jdx',
+			x: '../test/cosy/121-97-1_zg.jdx'
 		},
 
 		molecule: '../lib/components/VisuMol/moleculeA.json',
