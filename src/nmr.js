@@ -109,7 +109,7 @@
 
 			var pos1t = to.getFromData( 'pos' ),
 				pos2t = to.getFromData( 'pos2' );
-            
+
 			pos1t.x = pos1.y;
 			pos1t.y = pos1.x;
 
@@ -501,7 +501,6 @@
 
 
 		NMR.prototype.resize1DTo = function( w, h ) {
-		    
 			this.graphs[ 'x' ].resize( w, h );
 			this.graphs[ 'x' ].drawSeries();
 		}
@@ -542,15 +541,14 @@
 				.setLabel( "My serie" )
 				.autoAxis()
 				.setData( data );
+				
+			serie_x.getXAxis().setAxisDataSpacingMax(0);
+			serie_x.getXAxis().setAxisDataSpacingMin(0);
 
 			serie_x.getYAxis().setDisplay( false ).togglePrimaryGrid( false ).toggleSecondaryGrid( false );
 			serie_x.getXAxis().flip(true).setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setTickPosition( 'outside' )
 
 			serie_x.XIsMonotoneous();
-			
-			
-			serie_x.getXAxis().setAxisDataSpacingMax(0);
-			serie_x.getXAxis().setAxisDataSpacingMin(0);
 
 			if( options.lineColor ) {
 				serie_x.setLineColor( options.lineColor );
@@ -579,13 +577,13 @@
 				.setYAxis( this.graphs['y'].getRightAxis( ) )
 				.setData( data );
 
+			serie_y.getYAxis().setAxisDataSpacingMax(0);
+			serie_y.getYAxis().setAxisDataSpacingMin(0);
+ 			
 			serie_y.getYAxis().setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).flip( true ).setTickPosition( 'outside' );
 			serie_y.getXAxis().togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setDisplay( false ).flip( true );
 
 			serie_y.XIsMonotoneous();
-			
-			serie_y.getYAxis().setAxisDataSpacingMax(0);
-			serie_y.getYAxis().setAxisDataSpacingMin(0);
 
 			if( options.lineColor ) {
 				serie_y.setLineColor( options.lineColor );
@@ -614,9 +612,6 @@
 				.setLabel( "My serie" )
 				.autoAxis()
 				.setData( data )
-				
-			serie_2d.getYAxis().setAxisDataSpacingMax(0);
-			serie_2d.getYAxis().setAxisDataSpacingMin(0);	
 /*
 			serie_2d.getXAxis().forceMin( serie_x.getXAxis().getMinValue( ) );
 			serie_2d.getXAxis().forceMax( serie_x.getXAxis().getMaxValue( ) );
@@ -638,12 +633,11 @@
 				serie_2d_minimap.getYAxis().forceMin( serie_y.getYAxis().getMinValue( ) );
 				serie_2d_minimap.getYAxis().forceMax( serie_y.getYAxis().getMaxValue( ) );
 */
-				
 				this.minimapClip.setSerie( serie_2d_minimap );
-				this.graphs[ '_2d-minimap' ].autoscaleAxes();
+
 				this.graphs[ '_2d-minimap' ].redraw( );
 				this.graphs[ '_2d-minimap' ].drawSeries();
-	
+
 			}
 
 			if( options.lineColor ) {
@@ -662,8 +656,7 @@
 			serie_2d.setShapeZoom( this.shapeZoom );
 			this.shapeZoom.setSerie( serie_2d );
 			this.shapeZoom.addSerie( serie_2d );
-			//this.graphs[ '_2d' ]._pluginExecute( 'graph.plugin.zoom', 'onDblClick', [ this.graphs[ '_2d' ], 0, 0, { mode: 'xtotal' }, 1, true ] );
-							
+
 			if( options.lineWidth ) {
 				serie_2d.setLineWidth( options.lineWidth );
 			}
@@ -671,7 +664,6 @@
 			if( options.setLineStyle ) {
 				serie_2d.setLineStyle( options.lineStyle );
 			}
-			
 		}
 
 
@@ -703,9 +695,10 @@
 			this.graphs['x'].redraw( );	
 			this.graphs['x'].drawSeries();	
 
+
 			this.graphs[ '_2d' ].getXAxis().forceMin( this.graphs['x'].getXAxis().getMinValue() );
 			this.graphs[ '_2d' ].getXAxis().forceMax( this.graphs['x'].getXAxis().getMaxValue() );
-			//console.log( this.graphs['y'].getYAxis().getMinValue() );
+//console.log( this.graphs['y'].getYAxis().getMinValue() );
 			this.graphs[ '_2d' ].getYAxis().forceMin( this.graphs['y'].getRightAxis().getMinValue() );
 			this.graphs[ '_2d' ].getYAxis().forceMax( this.graphs['y'].getRightAxis().getMaxValue() );
 			
@@ -723,7 +716,7 @@
 				this.integralBasis = false;
 
 			}
-			
+
 			var serie_x = this.graphs[ 'x' ].newSerie(name, $.extend( { useSlots: true }, options ) )
 				.setLabel( "My serie" )
 				.autoAxis()
@@ -747,22 +740,14 @@
 			//serie_x.degrade( 1 ).kill()
 
 			serie_x.XIsMonotoneous();
-			
 			serie_x.getXAxis().setAxisDataSpacingMax(0);
 			serie_x.getXAxis().setAxisDataSpacingMin(0);
-			
+
 			serie_x.getYAxis().setDisplay( false ).togglePrimaryGrid( false ).toggleSecondaryGrid( false );
 			serie_x.getXAxis().flip(true).setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setTickPosition( 'outside' )
 
-
-			
 			this.graphs.x.autoscaleAxes();
 			this.graphs.x.drawSeries();
-			//this.graphs.x.updateAxes();
-			//console.log(serie_x.getXAxis().getActualMax());
-			//console.log(serie_x.getXAxis().getActualMin());
-			
-			//this.graphs[ 'x' ].redraw( );
 		}
 
 
@@ -772,7 +757,7 @@
 			switch( this.getMode() ) {
 
 				case '1d':
-	
+
 					this.setSerieX( name, series.x.spectra[ 0 ].data[ 0 ], { label: "SomeLabel" } );
 
 
@@ -788,12 +773,14 @@
 					this.setSerie2DX( name, series.x.spectra[ 0 ].data[ 0 ], options );
 					this.setSerie2DY( name, series.y.spectra[ 0 ].data[ 0 ], options );
 					this.setSerie2D( name, series.twoD.contourLines, options );
-					
+
 
 					/********************************************/
 					/** DRAW ALL ********************************/
 					/********************************************/
+
 					this.redrawAll2D();
+					
 
 				break;
 
@@ -1137,6 +1124,7 @@
 						zoomMode: 'x',
 
 						onZoomStart: function( graph, x, y, e, target ) {
+
 							self.graphs[ '_2d' ]._pluginExecute( 'graph.plugin.zoom', 'onMouseDown', [ self.graphs[ '_2d' ], x, undefined, e, true ] );
 
 						},
@@ -1153,16 +1141,16 @@
 							var xaxis = self.graphs['x'].getXAxis();
 							var from = xaxis.getActualMin();
 							var to = xaxis.getActualMax();
-							
 
- 							self.graphs['_2d']._applyToAxes( '_doZoomVal', [ from, to], true, false );
+ 							self.graphs['_2d']._applyToAxes( '_doZoomVal', [ from, to ], true, false );
  							self.graphs['_2d'].redraw();
  							self.graphs['_2d'].drawSeries();
 							self.graphs[ '_2d' ]._pluginExecute( 'graph.plugin.zoom', 'removeZone', [ ] );
 
 						},
-						
+
 						onDblClick: function( x, y, prefs, e ) {
+							
 							self.graphs[ '_2d' ]._pluginExecute( 'graph.plugin.zoom', 'onDblClick', [ self.graphs[ '_2d' ], x, y, { mode: 'xtotal' }, e, true ] );
 							
 						}
@@ -1240,7 +1228,7 @@
 						},
 
 						onZoomEnd: function( graph, x, y, e, target ) {
-							//console.log("CCCC");
+
 
 							var yaxis = self.graphs['y'].getYAxis();
 							var from = yaxis.getActualMin();
@@ -1358,6 +1346,7 @@ console.log( from, to );
 				plugins: {
 					'graph.plugin.zoom': { 
 						zoomMode: 'x'
+
 					},
 
 					'graph.plugin.shape': this.nmrSignal1dOptions[ 'x' ],
@@ -1420,7 +1409,7 @@ console.log( from, to );
 			/** DRAW ALL ********************************/
 			/********************************************/
 
-			
+
 			this.graphs[ 'x' ].redraw( );	
 			this.graphs[ 'x' ].drawSeries();	
 
