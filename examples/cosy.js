@@ -14,6 +14,8 @@ requirejs.config({
 		'graph': './lib/components/jsgraph/dist/jsgraph',
 		'assignation': './src/assignation',
 		'jcampconverter': './lib/components/jcampconverter/build/jcampconverter',
+		'sd': './src/sd',
+		'fft': './lib/components/fft/fft'
 		//'graphs': './lib/components/graph/src'
 	}
 });

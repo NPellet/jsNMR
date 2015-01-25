@@ -9,16 +9,19 @@ requirejs.config({
 		'highlightjs': './lib/lib/highlight/highlight.pack',
 		'forms': './lib/lib/forms/form',
 		'components': './lib/components',
-		'graphs': './lib/components/graph/src'
+		'graph': './lib/components/jsgraph/dist/jsgraph',
+		'sd': './src/sd',
+		'fft': './lib/components/fft/fft'
+		//'graphs': './lib/components/graph/src'
 	}
 });
 
-define( [ './src/nmr1d' ] , function( nmrhandler ) {
+define( [ './src/nmr' ] , function( nmrhandler ) {
 
 	"use strict";
 
 	nmrhandler( 
-		'../lib/components/jcampconverter/data/indometacin/1h.dx', 
+		'../test/cosy/121-97-1_zg.jdx', 
 		'../lib/components/VisuMol/moleculeA.json',
 		$( "#nmr" )
 	);

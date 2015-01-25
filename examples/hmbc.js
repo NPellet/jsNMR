@@ -14,6 +14,8 @@ requirejs.config({
 		'graph': './lib/components/jsgraph/dist/jsgraph',
 		'assignation': './src/assignation',
 		'jcampconverter': './lib/components/jcampconverter/build/jcampconverter',
+		'sd': './src/sd',
+		'fft': './lib/components/fft/fft'
 		//'graphs': './lib/components/graph/src'
 	}
 });
@@ -130,7 +132,7 @@ require([ '../src/nmr.js' ], function( NMRHandler ) {
 		twoDNegative: true,
 		label: 'Chemical 1'
 	});
-
+	/*
 	nmr.load( {
 
 		urls: {
@@ -152,6 +154,6 @@ require([ '../src/nmr.js' ], function( NMRHandler ) {
 
 		twoDNegative: true,
 		label: 'Chemical 2'
-	});
+	});*/
 });
 

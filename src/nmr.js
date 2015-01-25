@@ -24,9 +24,8 @@
 		function fetchUrls( nmr, urls, options ) {
 
 			var fetching = [];
-
 			for( var i in urls ) {
-				fetching.push( $.get( urls[ i ] ).then( function( data ) { return JcampConverter.convert( data ) } ) );
+				fetching.push( $.get( urls[ i ] ).then( function( data ) { return JcampConverter.convert( data, {keepSpectra:true} ) } ) );
 			}
 
 			if( ! nmr.divLoading ) {
@@ -836,8 +835,8 @@
 				paddingRight: 0,
 
 				onAnnotationChange: function( data, shape ) {
-
 					if( data.type == "rect" ) {
+						//console.log("here2");
 						var pos = data.pos;
 						pos.x = ( pos.x + data.pos2.x ) / 2;
 						pos.y = ( pos.y + data.pos2.y ) / 2;
@@ -861,9 +860,37 @@
 							shape2.redrawImpl();
 
 						} );
-
 						// ANDRES
 						// You can do here your processing and create new shapes
+						//Detect all the peaks in the given spectra within the given range(data.pos and data.pos2 )
+						var spectra = SD.create(self.series[0].twoD);
+						console.log("Here");
+						var peakList = spectra.nmrPeakDetection2D({"thresholdFactor":1.5,"limits":data});
+						//console.log(peakList);
+						for(var i=peakList.length-1; i>=0;i--){
+						    var peakXY = {x:peakList[i].shiftX,y:peakList[i].shiftY}
+
+							this.newShape( {
+
+								type: 'cross',
+								pos: peakXY,
+
+								strokeColor: 'red',
+								strokeWidth: 3,
+
+								shapeOptions: {
+									length: 20,
+									locked: true
+								}
+
+							} ).then( function( shape2 ) {
+
+								shape2.draw();
+								shape2.redrawImpl();
+
+							} );
+						}
+						
 						shape.kill();
 					}
 				},
@@ -1345,7 +1372,7 @@ console.log( from, to );
 
 				plugins: {
 					'graph.plugin.zoom': { 
-						zoomMode: 'x'
+						zoomMode: 'y'
 
 					},
 
@@ -1423,7 +1450,7 @@ console.log( from, to );
 
     if( typeof define === "function" && define.amd ) {
         
-        define( [ 'graph', 'assignation', 'jcampconverter', 'lib/components/VisuMol/src/molecule' ], function( Graph, Assignation, JcampConverter, Molecule ) {
+        define( [ 'graph', 'assignation', 'jcampconverter', 'lib/components/VisuMol/src/molecule', 'sd' ], function( Graph, Assignation, JcampConverter, Molecule, SD ) {
             return factory( Graph, Assignation, JcampConverter, Molecule );
         });
 
