@@ -14,12 +14,12 @@ requirejs.config({
 });
 
 define( [ './src/nmr1d' ] , function( nmrhandler ) {
-
+console.log( nmrhandler );
 	"use strict";
 
 	nmrhandler( 
 		'../lib/components/jcampconverter/data/indometacin/1h.dx', 
-		'../lib/components/VisuMol/moleculeA.json',
+		$("#OCL"),
 		$( "#nmr" )
 	);
 	

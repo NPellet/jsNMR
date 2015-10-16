@@ -9,7 +9,7 @@
 
 } ( window, function( window ) {
 
-	var factory = function( Graph, Attribution, JcampConverter, Molecule ) {
+	var factory = function( Graph, Assignment, JcampConverter ) {
 
 		// Root here
 		var defaults = {
@@ -336,7 +336,8 @@
 
 			this.minimapClip;
 			// 1D
-	
+		
+
 			this.nmrIntegralOptions = {
 				 x: { 
 					type: 'nmrintegral', 
@@ -430,6 +431,13 @@
 
 				break;
 			}
+
+
+			if( this.options.assignment ) {
+				this.assignement = new Assignment( $.extend( this.options.assignment, { graphs: this.graphs, domGraphs: this.options.dom } ) );	
+			}
+			
+
 		}
 
 
@@ -476,12 +484,8 @@
 
 			fetchUrls( this, urls, load );
 
-			if( load.molecule ) {
+//				
 
-				loadMolecule( load.molecule, this.options.dom );
-
-				new Assignation( this.options.dom, this.graphs );
-			}
 
 
 		}
@@ -499,6 +503,17 @@
 			return this.options.dom;
 		}
 
+		NMR.prototype.getGraph2D = function() {
+			return this.graphs['_2d'];
+		}
+
+		NMR.prototype.getGraphX = function() {
+			return this.graphs['x'];
+		}
+
+		NMR.prototype.getGraphY = function() {
+			return this.graphs['y'];
+		}
 
 		NMR.prototype.resize1DTo = function( w, h ) {
 			this.graphs[ 'x' ].resize( w, h );
@@ -756,7 +771,7 @@
 
 				case '1d':
 
-					this.setSerieX( name, spectra.x.spectra[ 0 ].data[ 0 ], { label: "SomeLabel" } );
+					this.setSerieX( name, series.x.spectra[ 0 ].data[ 0 ], { label: "SomeLabel" } );
 
 
 				break;
@@ -787,30 +802,7 @@
 
 		}
 
-		function loadMolecule( molUrl, nmrDom ) {
-
-			var dom = document.createElement("div");
-			dom.setAttribute('style', 'position: absolute;');
-			// Create a new molecule
-			var molecule = new Molecule( { maxBondLengthAverage: 40 } );
-
-			// Adds the molecule somewhere in the DOM
-			dom.appendChild( molecule.getDom() );
-
-			// Set the size of the canvas
-			molecule.resize( 150, 100 );
-
-			// Fetches the JSON and uses it as the source data
-			molecule.setDataFromJSONFile( molUrl ).then( function() {
-
-				molecule.render();
-
-			});
-
-			nmrDom.prepend( dom );
 	
-		}
-
 
 		/********************************************/
 		/** LOAD GRAPHS *****************************/
@@ -1189,7 +1181,7 @@
 					type: 'plugin',
 					plugin: 'graph.plugin.zoom',
 					options: {
-						direction: 'x',
+						direction: 'y',
 						baseline: 0
 					}
 				},
@@ -1379,7 +1371,7 @@ console.log( from, to );
 					type: 'plugin',
 					plugin: 'graph.plugin.zoom',
 					options: {
-						direction: 'x',
+						direction: 'y',
 						baseline: 0
 					}
 				},
@@ -1438,19 +1430,19 @@ console.log( from, to );
 
     if( typeof define === "function" && define.amd ) {
         
-        define( [ 'graph', 'assignation', 'jcampconverter', 'lib/components/VisuMol/src/molecule' ], function( Graph, Assignation, JcampConverter, Molecule ) {
-            return factory( Graph, Assignation, JcampConverter, Molecule );
+        define( [ 'graph', 'assignment', 'jcampconverter' ], function( Graph, Assignment, JcampConverter ) {
+            return factory( Graph, Assignment, JcampConverter );
         });
 
     } else if( window ) {
         
-        if( window.Graph && window.Assignation && window.JcampConverter ) {
+        if( window.Graph && window.Assignment && window.JcampConverter ) {
 
         	// Namespace NMRHandler
-        	window.NMRHandler = factory( window.Graph, window.Assignation, window.JcampConverter, window.Molecule );	
+        	window.NMRHandler = factory( window.Graph, window.Assignment, window.JcampConverter );	
 
         } else {
-        	throw "Graph, Attribution or Jcamp is not defined"
+        	throw "Graph, Assignment or Jcamp is not defined"
         }
     }
 

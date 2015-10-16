@@ -12,8 +12,8 @@ requirejs.config({
 		'forms': './lib/lib/forms/form',
 		'components': './lib/components',
 		'graph': './lib/components/graph/dist/jsgraph',
-		'assignation': './src/assignation',
-		'jcampconverter': './lib/components/jcampconverter/src/jcampconverter',
+		'assignment': './src/assignment',
+		'jcampconverter': './lib/components/jcampconverter/build/jcampconverter',
 		'graphs': './lib/components/graph/src'
 	}
 });
@@ -22,26 +22,67 @@ requirejs.config({
 
 require([ '../src/nmr.js' ], function( NMRHandler ) {
 
-	var nmr = new NMRHandler({
-				
-		dom: $("#nmr2"),
-		mode: '1d',
-		symmetric: false,
+
+	$( document ).ready( function() {
+
+
+		var nmr = new NMRHandler({
+			dom: $("#nmr2"),
+			mode: '1d',
+			symmetric: false,
+
+			assignment: {
+				domMolecule: $("#OCL"),
+				domGlobal: $("#wrapper"),
+
+				filters: {
+					target: "[data-atomid]"
+				},
+
+				targetA: {
+					dom: $("#OCL"),
+					bindableFilter: "[data-atomid]",
+					attributeUnique: "id",
+					attributeEquivalents: "data-atomid",
+
+					highlighted: {
+						fill: 'red',
+						'fill-opacity': 0.3
+					},
+
+					targettable: {
+						fill: 'yellow',
+						'fill-opacity': 0.3
+					}
+				},
+
+
+				targetB: {
+					dom: $("#nmr2"),
+					bindableFilter: ".bindable",
+					bindableFilterClass: ".bindable",
+					attributeUnique: "id",
+					attributeEquivalents: "id",
+
+					targettable: {
+						"stroke-width": "5px",
+						"stroke": "orange"
+					}
+				}
+			}
+		});
+
+		nmr.load( {
+
+			urls: {
+				x: '../test/cosy/121-97-1_zg.jdx', 
+			},
+
+			lineColor: 'green',
+			label: 'Some molecule'
+
+		})
 	});
-
-
-
-	nmr.load( {
-
-		urls: {
-			x: '../test/cosy/121-97-1_zg.jdx', 
-		},
-
-		molecule: '../lib/components/VisuMol/moleculeA.json',
-		lineColor: 'green',
-		label: 'Some molecule'
-
-	})
 
 
 

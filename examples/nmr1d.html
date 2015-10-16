@@ -4,9 +4,8 @@
 
 		<script src="../lib/components/jquery/dist/jquery.js" type="text/javascript"></script>	
 		<script src="../lib/components/graph/dist/jsgraph.js" type="text/javascript"></script>	
-		<script src="../lib/components/jcampconverter/build/jcampconverter.js" type="text/javascript"></script>	
 				
-		<script src="../src/assignation.js" type="text/javascript"></script>	
+		
 		
 		<script data-main="./1d" src="../lib/components/requirejs/require.js" type="text/javascript"></script>
 		
@@ -18,8 +17,68 @@
 	</head>
 
 	<body>
+
+	<div id="wrapper">
+
+	<svg id="OCL" xmlns="http://www.w3.org/2000/svg" version="1.1" width="300px" height="200px" viewBox="0 0 300 200">
+		<style> #OCL {pointer-events:none; }  #OCL .event  { pointer-events:all;}  </style>
+		<text x="144" y="97" font-family=" Helvetica" font-size="14" fill="rgb(244,12,12)">O</text>
+		<text x="91" y="76" font-family=" Helvetica" font-size="14" fill="rgb(153,153,153)">H</text>
+		<text x="73" y="108" font-family=" Helvetica" font-size="14" fill="rgb(153,153,153)">H</text>
+		<text x="118" y="128" font-family=" Helvetica" font-size="14" fill="rgb(153,153,153)">H</text>
+		<text x="160" y="131" font-family=" Helvetica" font-size="14" fill="rgb(153,153,153)">H</text>
+		<text x="182" y="131" font-family=" Helvetica" font-size="14" fill="rgb(153,153,153)">H</text>
+		<text x="216" y="87" font-family=" Helvetica" font-size="14" fill="rgb(153,153,153)">H</text>
+		<text x="208" y="116" font-family=" Helvetica" font-size="14" fill="rgb(153,153,153)">H</text>
+		<text x="187" y="79" font-family=" Helvetica" font-size="14" fill="rgb(153,153,153)">H</text>
+		<line x1="123" y1="109" x2="96" y2="93" style="stroke:rgb(0,0,0);stroke-width:1"/>
+		<line x1="123" y1="104" x2="98" y2="90" style="stroke:rgb(0,0,0);stroke-width:1"/>
+		<line x1="143" y1="97" x2="123" y2="109" style="stroke:rgb(0,0,0);stroke-width:1"/>
+		<line x1="176" y1="109" x2="166" y2="103" style="stroke:rgb(255,0,255);stroke-width:1"/>
+		<line x1="166" y1="103" x2="156" y2="97" style="stroke:rgb(0,0,0);stroke-width:1"/>
+		<line x1="203" y1="93" x2="189" y2="101" style="stroke:rgb(0,0,0);stroke-width:1"/>
+		<line x1="189" y1="101" x2="176" y2="109" style="stroke:rgb(255,0,255);stroke-width:1"/>
+		<line x1="96" y1="93" x2="96" y2="79" style="stroke:rgb(0,0,0);stroke-width:1"/>
+		<line x1="96" y1="93" x2="84" y2="101" style="stroke:rgb(0,0,0);stroke-width:1"/>
+		<line x1="123" y1="109" x2="123" y2="117" style="stroke:rgb(0,0,0);stroke-width:1"/>
+		<polygon points="176,109 172,114 173,115 " style="fill:rgb(255,0,255);stroke:rgb(255,0,255);stroke-width:1"/>
+		<polygon points="173,115 172,114 168,119 171,121 " style="fill:rgb(255,0,255);stroke:rgb(255,0,255);stroke-width:1"/>
+		<line x1="176" y1="109" x2="179" y2="114" style="stroke:rgb(255,0,255);stroke-width:1"/>
+		<line x1="179" y1="114" x2="183" y2="120" style="stroke:rgb(0,0,0);stroke-width:1"/>
+		<line x1="203" y1="93" x2="215" y2="86" style="stroke:rgb(0,0,0);stroke-width:1"/>
+		<line x1="203" y1="93" x2="209" y2="105" style="stroke:rgb(0,0,0);stroke-width:1"/>
+		<line x1="203" y1="93" x2="196" y2="82" style="stroke:rgb(0,0,0);stroke-width:1"/>
+		<line id="OCL:Bond:1-0" class="event" x1="123" y1="109" x2="96" y2="93" stroke-width="8" stroke-opacity="0"/>
+		<line id="OCL:Bond:2-1" class="event" x1="149" y1="93" x2="123" y2="109" stroke-width="8" stroke-opacity="0"/>
+		<line id="OCL:Bond:3-2" class="event" x1="176" y1="109" x2="149" y2="93" stroke-width="8" stroke-opacity="0"/>
+		<line id="OCL:Bond:4-3" class="event" x1="203" y1="93" x2="176" y2="109" stroke-width="8" stroke-opacity="0"/>
+		<line id="OCL:Bond:0-5" class="event" x1="96" y1="93" x2="96" y2="72" stroke-width="8" stroke-opacity="0"/>
+		<line id="OCL:Bond:0-6" class="event" x1="96" y1="93" x2="78" y2="104" stroke-width="8" stroke-opacity="0"/>
+		<line id="OCL:Bond:1-7" class="event" x1="123" y1="109" x2="123" y2="124" stroke-width="8" stroke-opacity="0"/>
+		<line id="OCL:Bond:3-8" class="event" x1="176" y1="109" x2="165" y2="127" stroke-width="8" stroke-opacity="0"/>
+		<line id="OCL:Bond:3-9" class="event" x1="176" y1="109" x2="187" y2="127" stroke-width="8" stroke-opacity="0"/>
+		<line id="OCL:Bond:4-10" class="event" x1="203" y1="93" x2="221" y2="83" stroke-width="8" stroke-opacity="0"/>
+		<line id="OCL:Bond:4-11" class="event" x1="203" y1="93" x2="213" y2="112" stroke-width="8" stroke-opacity="0"/>
+		<line id="OCL:Bond:4-12" class="event" x1="203" y1="93" x2="192" y2="75" stroke-width="8" stroke-opacity="0"/>
+		<circle id="OCL:Atom:0" data-atomid="gJQHDIeIUj@_iDCaU@" class="event" cx="96" cy="93" r="8" fill-opacity="0"/>
+		<circle id="OCL:Atom:1" data-atomid="gJQHHIeJ^Z@_iDCaU@" class="event" cx="123" cy="109" r="8" fill-opacity="0"/>
+		<circle id="OCL:Atom:2" data-atomid="gJPHALiRtpC}H`_Jh" class="event" cx="149" cy="93" r="8" fill-opacity="0"/>
+		<circle id="OCL:Atom:3" data-atomid="gJQHHIeJ^i@_iDCaU@" class="event" cx="176" cy="109" r="8" fill-opacity="0"/>
+		<circle id="OCL:Atom:4" data-atomid="gJQHDIeIVi@_iDCaU@" class="event" cx="203" cy="93" r="8" fill-opacity="0"/>
+		<circle id="OCL:Atom:5" data-atomid="gGQHLIeIUfhRK}H`QJh" class="event" cx="96" cy="72" r="8" fill-opacity="0"/>
+		<circle id="OCL:Atom:6" data-atomid="gGQHLIeIUfhRS}H`QJh" class="event" cx="78" cy="104" r="8" fill-opacity="0"/>
+		<circle id="OCL:Atom:7" data-atomid="gGQHDIeIgihA~dPHeT" class="event" cx="123" cy="124" r="8" fill-opacity="0"/>
+		<circle id="OCL:Atom:8" data-atomid="gGQHDIeIgjfR`OtbADj`" class="event" cx="165" cy="127" r="8" fill-opacity="0"/>
+		<circle id="OCL:Atom:9" data-atomid="gGQHDIeIgjfR`OtbADj`" class="event" cx="187" cy="127" r="8" fill-opacity="0"/>
+		<circle id="OCL:Atom:10" data-atomid="gGQHLIeIUjdA~dPHeT" class="event" cx="221" cy="83" r="8" fill-opacity="0"/>
+		<circle id="OCL:Atom:11" data-atomid="gGQHLIeIUjdA~dPHeT" class="event" cx="213" cy="112" r="8" fill-opacity="0"/>
+		<circle id="OCL:Atom:12" data-atomid="gGQHLIeIUjdA~dPHeT" class="event" cx="192" cy="75" r="8" fill-opacity="0"/>
+	</svg>
+
 		<!--<div id="nmr" style="width: 800px; height: 700px;"></div>-->
 		<div id="nmr2" style="width: 800px; height: 700px;"></div>
+
+	</div>
 	<!--<div id="tools"></div>-->
 	<script>
 
