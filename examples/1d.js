@@ -11,8 +11,11 @@ requirejs.config({
 		'highlightjs': './lib/lib/highlight/highlight.pack',
 		'forms': './lib/lib/forms/form',
 		'components': './lib/components',
+
 		'graph': './lib/components/graph/dist/jsgraph',
 		'assignment': './src/assignment',
+		'sd': './src/sd',
+
 		'jcampconverter': './lib/components/jcampconverter/build/jcampconverter',
 		'graphs': './lib/components/graph/src'
 	}
@@ -55,7 +58,6 @@ require([ '../src/nmr.js' ], function( NMRHandler ) {
 						'fill-opacity': 0.3
 					}
 				},
-
 
 				targetB: {
 					dom: $("#nmr2"),

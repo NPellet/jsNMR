@@ -24,9 +24,8 @@
 		function fetchUrls( nmr, urls, options ) {
 
 			var fetching = [];
-
 			for( var i in urls ) {
-				fetching.push( $.get( urls[ i ] ).then( function( data ) { return JcampConverter.convert( data ) } ) );
+				fetching.push( $.get( urls[ i ] ).then( function( data ) { return JcampConverter.convert( data, {keepSpectra:true} ) } ) );
 			}
 
 			if( ! nmr.divLoading ) {
@@ -556,6 +555,9 @@
 				.setLabel( "My serie" )
 				.autoAxis()
 				.setData( data );
+				
+			serie_x.getXAxis().setAxisDataSpacingMax(0);
+			serie_x.getXAxis().setAxisDataSpacingMin(0);
 
 			serie_x.getYAxis().setDisplay( false ).togglePrimaryGrid( false ).toggleSecondaryGrid( false );
 			serie_x.getXAxis().flip(true).setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setTickPosition( 'outside' )
@@ -589,6 +591,9 @@
 				.setYAxis( this.graphs['y'].getRightAxis( ) )
 				.setData( data );
 
+			serie_y.getYAxis().setAxisDataSpacingMax(0);
+			serie_y.getYAxis().setAxisDataSpacingMin(0);
+ 			
 			serie_y.getYAxis().setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).flip( true ).setTickPosition( 'outside' );
 			serie_y.getXAxis().togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setDisplay( false ).flip( true );
 
@@ -709,16 +714,15 @@
 			this.graphs['x'].redraw( );	
 			this.graphs['x'].drawSeries();	
 
-			this.graphs[ '_2d' ].redraw( );
-			this.graphs[ '_2d' ].drawSeries();
-
-
 
 			this.graphs[ '_2d' ].getXAxis().forceMin( this.graphs['x'].getXAxis().getMinValue() );
 			this.graphs[ '_2d' ].getXAxis().forceMax( this.graphs['x'].getXAxis().getMaxValue() );
 //console.log( this.graphs['y'].getYAxis().getMinValue() );
 			this.graphs[ '_2d' ].getYAxis().forceMin( this.graphs['y'].getRightAxis().getMinValue() );
 			this.graphs[ '_2d' ].getYAxis().forceMax( this.graphs['y'].getRightAxis().getMaxValue() );
+			
+			this.graphs[ '_2d' ].redraw( );
+			this.graphs[ '_2d' ].drawSeries();
 		}
 
 
@@ -755,6 +759,8 @@
 			//serie_x.degrade( 1 ).kill()
 
 			serie_x.XIsMonotoneous();
+			serie_x.getXAxis().setAxisDataSpacingMax(0);
+			serie_x.getXAxis().setAxisDataSpacingMin(0);
 
 			serie_x.getYAxis().setDisplay( false ).togglePrimaryGrid( false ).toggleSecondaryGrid( false );
 			serie_x.getXAxis().flip(true).setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setTickPosition( 'outside' )
@@ -826,8 +832,8 @@
 				paddingRight: 0,
 
 				onAnnotationChange: function( data, shape ) {
-
 					if( data.type == "rect" ) {
+						//console.log("here2");
 						var pos = data.pos;
 						pos.x = ( pos.x + data.pos2.x ) / 2;
 						pos.y = ( pos.y + data.pos2.y ) / 2;
@@ -851,6 +857,38 @@
 							shape2.redrawImpl();
 
 						} );
+
+						// ANDRES
+						// You can do here your processing and create new shapes
+						//Detect all the peaks in the given spectra within the given range(data.pos and data.pos2 )
+						var spectra = SD.create(self.series[0].twoD);
+						console.log("Here");
+						var peakList = spectra.nmrPeakDetection2D({"thresholdFactor":1.5,"limits":data});
+						//console.log(peakList);
+						for(var i=peakList.length-1; i>=0;i--){
+						    var peakXY = {x:peakList[i].shiftX,y:peakList[i].shiftY}
+
+							this.newShape( {
+
+								type: 'cross',
+								pos: peakXY,
+
+								strokeColor: 'red',
+								strokeWidth: 3,
+
+								shapeOptions: {
+									length: 20,
+									locked: true
+								}
+
+							} ).then( function( shape2 ) {
+
+								shape2.draw();
+								shape2.redrawImpl();
+
+							} );
+						}
+						
 
 						shape.kill();
 					}
@@ -1350,7 +1388,7 @@ console.log( from, to );
 
 				plugins: {
 					'graph.plugin.zoom': { 
-						zoomMode: 'x'
+						zoomMode: 'y'
 
 					},
 
@@ -1430,8 +1468,10 @@ console.log( from, to );
 
     if( typeof define === "function" && define.amd ) {
         
-        define( [ 'graph', 'assignment', 'jcampconverter' ], function( Graph, Assignment, JcampConverter ) {
+
+        define( [ 'graph', 'assignment', 'jcampconverter', 'sd' ], function( Graph, Assignment, JcampConverter, SD ) {
             return factory( Graph, Assignment, JcampConverter );
+
         });
 
     } else if( window ) {

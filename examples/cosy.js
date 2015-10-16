@@ -11,10 +11,16 @@ requirejs.config({
 		'highlightjs': './lib/lib/highlight/highlight.pack',
 		'forms': './lib/lib/forms/form',
 		'components': './lib/components',
-		'graph': './lib/components/graph/dist/jsgraph',
+		'graph': './lib/components/jsgraph/dist/jsgraph',
 		'assignation': './src/assignation',
 		'jcampconverter': './lib/components/jcampconverter/build/jcampconverter',
+<<<<<<< HEAD
 		'graphs': './lib/components/graph/src'
+=======
+		'sd': './src/sd',
+		'fft': './lib/components/fft/fft'
+		//'graphs': './lib/components/graph/src'
+>>>>>>> 73cd9c371c8ebc53c32b7f6e6c36077e8a407d99
 	}
 });
 
