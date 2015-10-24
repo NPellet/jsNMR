@@ -12,7 +12,8 @@ requirejs.config({
 		'forms': './lib/lib/forms/form',
 		'components': './lib/components',
 
-		'graph': './lib/components/graph/dist/jsgraph',
+		'graph': './lib/components/jsgraph/dist/jsgraph',
+		'shape1DNMR': './src/shape.1dnmr',
 		'assignment': './src/assignment',
 		'sd': './src/sd',
 
@@ -64,7 +65,11 @@ require([ '../src/nmr.js' ], function( NMRHandler ) {
 					bindableFilter: ".bindable",
 					bindableFilterClass: ".bindable",
 					attributeUnique: "id",
-					attributeEquivalents: "id",
+					attributeEquivalents: "data-bindable",
+
+					highlighted: {
+						stroke: "blue"
+					},
 
 					targettable: {
 						"stroke-width": "5px",

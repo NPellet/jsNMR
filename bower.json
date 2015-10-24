@@ -29,6 +29,6 @@
   },
   "dependencies": {
     "jcampconverter": "~2.0.1",
-    "jsgraph": "~1.10.0"
+    "jsgraph": "latest"
   }
 }

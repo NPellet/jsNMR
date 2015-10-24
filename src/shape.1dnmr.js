@@ -3,21 +3,12 @@ define( [ 'require', 'graph' ], function( require, Graph ) {
 
 	"use strict";
 	var lineHeight = 5;
-	var GraphLine = Graph.getBuild( './shapes/graph.shape.line' )
+	var GraphLine = Graph.getConstructor( 'graph.shape.line' );
+
 	var GraphNmrSignal1D = function( graph, options ) {
 
-		this.options = options || {};
-		this.init( graph );
-		this.nbHandles = 2;
-		this.createHandles( this.nbHandles, 'rect', { 
-									transform: "translate(-3 -3)", 
-									width: 6, 
-									height: 6, 
-									stroke: "black", 
-									fill: "white",
-									cursor: 'nwse-resize'
-								} );
-
+		this.options = options || 2;
+		
 	}
 
 	$.extend(GraphNmrSignal1D.prototype, GraphLine.prototype, {
@@ -25,6 +16,14 @@ define( [ 'require', 'graph' ], function( require, Graph ) {
 		createDom: function() {
 			
 
+	      this._createHandles( 2, 'rect', {
+	        transform: "translate(-3 -3)",
+	        width: 6,
+	        height: 6,
+	        stroke: "black",
+	        fill: "white",
+	        cursor: 'nwse-resize'
+	      } );
 
 			this._dom = document.createElementNS(this.graph.ns, 'line');
 			this.maxLines = 64;
@@ -35,6 +34,15 @@ define( [ 'require', 'graph' ], function( require, Graph ) {
 
 			this.lines = new Array(this.maxLines);
 			
+
+			/*this._createHandles( this.nbHandles, 'rect', { 
+				transform: "translate(-3 -3)", 
+				width: 6, 
+				height: 6, 
+				stroke: "black", 
+				fill: "white",
+				cursor: 'nwse-resize'
+			} );*/
 
 
 			//I dont know how to remove the previous lines, so, I'll create an array of
@@ -73,15 +81,9 @@ define( [ 'require', 'graph' ], function( require, Graph ) {
 
 		redrawImpl: function() {
 
-
-			this.setPosition();
-			this.setPosition2();
 			this.setHandles();
-
 			this.redrawLines( lineHeight );
-			
-
-			this.setBindableToDom( this._dom );
+			//this.setBindableToDom( this._dom );
 		},
 
 
@@ -239,23 +241,6 @@ define( [ 'require', 'graph' ], function( require, Graph ) {
 			}
 			//console.log(signals);
 			return signals;
-		},
-
-		highlight: function() {
-
-			if( this.isBindable() ) {
-				this._dom.setAttribute('stroke-width', '5');
-				this.highLigthLinesY( 2 );
-			}
-		},
-
-
-		unhighlight: function() {
-
-			if( this.isBindable() ) {
-				this.setStrokeWidth();
-				this.highLigthLinesY( -2 );
-			}
 		}
 	});
 
