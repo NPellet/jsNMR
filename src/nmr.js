@@ -326,12 +326,11 @@
 				break;
 			}
 
-
 			if( this.options.assignment ) {
-				this.assignement = new Assignment( $.extend( this.options.assignment, { graphs: this.graphs, domGraphs: this.options.dom } ) );	
-			}
-			
 
+				this.assignement = new Assignment( $.extend( this.options.assignment, { graphs: this.graphs, domGraphs: this.options.dom } ) );	
+				//this.assignement.setAssignment( [ [ "1", "gGQHLIeIUjdA~dPHeT" ] ] );
+			}
 		}
 
 
@@ -489,10 +488,12 @@
 						bindable: true,
 						axis: 'x',
 
-						attributes: { 'data-bindable': function() { return Math.random() } },
+						attributes: { 'data-bindable': function() { return 1; } },
 
-						onNewShape: function( ) {
-							this.setSerie( self.graphs[ 'x' ].getSerie( 0 ) );
+						onNewShape: function( shape ) {
+							
+							shape.setSerie( self.graphs[ 'x' ].getSerie( 0 ) );
+							//shape.setAttributes( { 'data-assignation': Math.random() } );
 						},
 
 						highlightOnMouseOver: true

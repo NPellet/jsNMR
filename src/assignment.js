@@ -63,22 +63,12 @@
 				}
 
 				// Try to be smart and determine where to put the line ?
+
+				var bb = el.getBBox();
 				var pos = $( el ).position(),
-				
-					w = parseFloat( el.getAttribute('width') || 0 ),
-					h = parseFloat( el.getAttribute('height') || 0 ),
 
-					x2 = parseFloat( el.getAttribute('x2') || 0 ),
-					y2 = parseFloat( el.getAttribute('y2') || 0 ),
-
-					x1 = parseFloat( el.getAttribute('x1') || 0 ),
-					y1 = parseFloat( el.getAttribute('y1') || 0 ),
-
-
-					x = pos.left + ( w / 2 ) + ( Math.abs( x2 - x1 ) / 2 ),
-					y = pos.top  + ( h / 2 ) + ( Math.abs( y2 - y1 ) / 2 );
-
-
+				x = pos.left + bb.width / 2,
+				y = pos.top + bb.height / 2;
 
 				bindingLine.setAttribute('display', 'block');
 
@@ -92,7 +82,9 @@
 
 				targetting = otherTarget( element ); 
 				if( options[ otherTarget( element ) ].targettable ) {
+
 					var targetEls = findTargettableElements( otherTarget( element ) );
+
 					targetEls.each( function( ) {
 
 						if( this.jsGraphIsShape ) {
@@ -111,16 +103,19 @@
 			},
 
 			otherTarget = function( target ) {
-				if( target == "targetA") {
+
+				if( target == "jsGraphShape") {
 					return "targetB";
 				}
-				return "targetA";
+
+				return "jsGraphShape";
 			},
 
 			findTargettableElements = function( target ) {
 
 				return $( options[ target ].dom ).find( options[ target ].bindableFilter );
 			},
+
 
 			mouseup = function( el, event, target ) {
 
@@ -199,16 +194,18 @@
 					return;
 				}
 
-				bindingLine.setAttribute('x2', e.clientX );
-				bindingLine.setAttribute('y2', e.clientY );
+				bindingLine.setAttribute('x2', e.clientX + window.scrollX );
+				bindingLine.setAttribute('y2', e.clientY + window.scrollY );
 			},
 
 			highlight = function( element, target ) {
 				
 				checkBindingPairs();
 				
+				var elements = [ element ];
 				if( options[ target ].highlighted ) {
-					highlightEquivalents( target, getEquivalents( target, element ) );
+					elements = getEquivalents( target, element );
+					highlightEquivalents( target, elements );
 				}
 				
 				//getEquivalents( target, selector );
@@ -217,11 +214,14 @@
 				var eqs = [];
 				
 //				unhighlight( element, target );
+				for( var i = 0, l = elements.length; i < l; i ++ ) {
+			
+					allPairs( highlightPair, elements[ i ], function( pair ) {
+						eqs = eqs.concat( $.makeArray( getEquivalents( otherTarget( target ), pair[ otherTarget( target ) ] ) ) );
+					} );
+				}
 
-				all( highlightPair, element, function( pair ) {
-					eqs = eqs.concat( $.makeArray( getEquivalents( otherTarget( target ), pair[ otherTarget( target ) ] ) ) );
-				} );
-
+				
 				eqs = $( eqs );
 				
 				if( options[ otherTarget( target ) ].highlighted ) {
@@ -230,31 +230,31 @@
 				
 			},
 
-			unhighlight = function( element, target ) {
+			unhighlight = function( element, target, force ) {
 
+			/*	if( binding && ! force) {
+					return;
+				}
+*/
 				checkBindingPairs();
+				var elements = getEquivalents( target, element );
 				
-				if(  highlighted[ target ][ 0 ].jsGraphIsShape ) {
+				var eqs = [];
 
-					highlighted[ target ].map( function( el ) {
-						this.jsGraphIsShape.unHighlight( "assignmentHighlighted");
+				for( var i = 0; i < elements.length; i ++ ) {
+
+					allPairs( unhighlightPair, elements[ i ], function( pair ) {
+						eqs = eqs.concat( $.makeArray( getEquivalents( otherTarget( target ), pair[ otherTarget( target ) ] ) ) );
 					} );
-				} else {
-					restoreAttributes( options[ target ].highlighted, highlighted[ target ] );
 				}
 
-				if(  highlighted[ otherTarget( target ) ][ 0 ] && highlighted[ otherTarget( target ) ][ 0 ].jsGraphIsShape ) {
 
-					highlighted[ otherTarget( target ) ].map( function( el ) {
-						this.jsGraphIsShape.unHighlight( "assignmentHighlighted");
-					} );
-				} else {
-					restoreAttributes( options[ otherTarget( target ) ].highlighted, highlighted[ otherTarget( target ) ] );
-				}
+				highlighted.jsGraphShape.map( function( el ) {
+					this.jsGraphIsShape.unHighlight( "assignmentHighlighted");
+				} );
 
-			
-				all( unhighlightPair, element );
-
+				restoreAttributes( options.targetB.highlighted, highlighted.targetB );
+				
 			},
 
 			highlightEquivalents = function( target, elementsToHighlight ) {
@@ -310,11 +310,11 @@
 				}
 			},
 
-			all = function( fct, element, callback ) {
+			allPairs = function( fct, element, callback ) {
 
 				for( var i = 0, l = self.bindingPairs.length ; i < l ; i ++ ) {
 
-					if( self.bindingPairs[ i ].targetA == element || self.bindingPairs[ i ].targetB == element ) {
+					if( self.bindingPairs[ i ].jsGraphShape == element || self.bindingPairs[ i ].targetB == element ) {
 
 						fct( self.bindingPairs[ i ] );
 
@@ -328,10 +328,10 @@
 			highlightPair = function( pair ) {
 
 
-				var posA = $( pair.targetA ).offset();
+				var posA = $( pair.jsGraphShape ).offset();
 				var posB = $( pair.targetB ).offset();
 
-				var bbA = $( pair.targetA )[ 0 ].getBBox();
+				var bbA = $( pair.jsGraphShape )[ 0 ].getBBox();
 				var bbB = $( pair.targetB )[ 0 ].getBBox();
 
 				var posMain = options.domGlobal.offset();
@@ -378,26 +378,24 @@
 			bindSave = function() {
 
 				var pair;
-				if( pair = lookForBound( self.targetA, self.targetB ) ) {
+				if( pair = lookForPair( self.jsGraphShape, self.targetB ) ) {
 					removePair( pair );
 					unhighlightPair( pair );
 					return false;
 				}
 
-				self.bindingPairs.push( { targetA: self.targetA, targetB: self.targetB } );
+				unhighlight( self.jsGraphShape, "jsGraphShape", true );
 
-				if( self.targetA.jsGraphIsShape ) {
-					self.targetA.jsGraphIsShape.setStrokeDasharray("5,5");
-					self.targetA.jsGraphIsShape.applyStyle();
-				}
+				self.bindingPairs.push( { jsGraphShape: self.jsGraphShape, targetB: self.targetB } );
 
-				if( self.targetB.jsGraphIsShape ) {
-					self.targetB.jsGraphIsShape.setStrokeDasharray("5,5");
-					self.targetB.jsGraphIsShape.applyStyle();
-				}
-
+				self.jsGraphShape.jsGraphIsShape.setStrokeDasharray("5,5");
+				self.jsGraphShape.jsGraphIsShape.applyStyle();
+			
 				bindingA = null;
 				bindingB = null;
+
+				console.log( self.getAssignment() );
+
 
 			},
 
@@ -405,11 +403,11 @@
 				self.bindingPairs.splice( self.bindingPairs.indexOf( pair ), 1 );
 			},
 
-			lookForBound = function( A, B ) {
+			lookForPair = function( A, B ) {
 
 				self.bindingPairs.map( function( pair ) {
 
-					if( pair.targetA == A || pair.targetB == B ) {
+					if( pair.jsGraphShape == A || pair.targetB == B ) {
 						return pair;
 					}
 				} );
@@ -421,7 +419,7 @@
 
 				for( var i = 0, l = self.bindingPairs.length ; i < l ; i ++ ) {
 
-					if( $( options.targetA.dom ).get( 0 ).contains( self.bindingPairs[ i ].targetA ) && $( options.targetB.dom ).get( 0 ).contains( self.bindingPairs[ i ].targetB ) ) {
+					if( $( options.jsGraphShape.dom ).get( 0 ).contains( self.bindingPairs[ i ].jsGraphShape ) && $( options.targetB.dom ).get( 0 ).contains( self.bindingPairs[ i ].targetB ) ) {
 						continue;
 					} else {
 
@@ -432,18 +430,18 @@
 
 			setEvents = function( ) {
 
-				options.targetA.dom.on('mousedown', options.targetA.bindableFilter, function( e ) {
+				options.jsGraphShape.dom.on('mousedown', options.jsGraphShape.bindableFilter, function( e ) {
 					
-					mousedown( this, e, "targetA" );
+					mousedown( this, e, "jsGraphShape" );
 				});
 
-				options.targetA.dom.on('mouseover', options.targetA.bindableFilter, function( e ) {
+				options.jsGraphShape.dom.on('mouseover', options.jsGraphShape.bindableFilter, function( e ) {
 					
-					highlight( this, "targetA" );
+					highlight( this, "jsGraphShape" );
 				});
 
-				options.targetA.dom.on('mouseout', options.targetA.bindableFilter, function( e ) {
-					unhighlight( this, "targetA" );
+				options.jsGraphShape.dom.on('mouseout', options.jsGraphShape.bindableFilter, function( e ) {
+					unhighlight( this, "jsGraphShape" );
 				});
 
 				options.targetB.dom.on('mousedown', options.targetB.bindableFilter, function( e ) {
@@ -458,8 +456,8 @@
 					unhighlight( this, "targetB" );
 				});
 
-				options.targetA.dom.on('mouseup', function( e ) {
-					mouseup( this, e, "targetA" );
+				options.jsGraphShape.dom.on('mouseup', function( e ) {
+					mouseup( this, e, "jsGraphShape" );
 				});
 
 				options.targetB.dom.on('mouseup', function( e ) {
@@ -504,10 +502,29 @@
 				return undefined;
 			}
 
-			var attrA = pair.targetA.getAttribute( self.options.targetA.attributeUnique );
-			var attrB = pair.targetB.getAttribute( self.options.targetB.attributeUnique );
+			var attrA = pair.jsGraphShape.getAttribute( self.options.jsGraphShape.attributeEquivalents );
+			var attrB = pair.targetB.getAttribute( self.options.targetB.attributeEquivalents );
 
 			return [ attrA, attrB ];
+		} );
+	}
+
+
+	Constructor.prototype.findElement = function( target, selector ) {
+
+		return $( this.options[ target ].dom ).find( "[" + this.options[ target ].attributeEquivalents + "=\"" + selector + "\"]");	
+	};
+
+
+	Constructor.prototype.setAssignment = function( pairs ) {
+
+		var self = this;
+		self.bindingPairs = [];
+
+		pairs.forEach( function( pair ) {
+
+			self.bindingPairs.push( { jsGraphShape: self.findElement( 'jsGraphShape', pair[ 0 ] ), targetB: self.findElement( 'targetB', pair[ 1 ] ) } );
+
 		} );
 	}
 

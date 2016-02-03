@@ -43,7 +43,7 @@ require([ '../src/nmr.js' ], function( NMRHandler ) {
 					target: "[data-atomid]"
 				},
 
-				targetA: {
+				targetB: {
 					dom: $("#OCL"),
 					bindableFilter: "[data-atomid]",
 					attributeUnique: "id",
@@ -60,7 +60,7 @@ require([ '../src/nmr.js' ], function( NMRHandler ) {
 					}
 				},
 
-				targetB: {
+				jsGraphShape: {
 					dom: $("#nmr2"),
 					bindableFilter: ".bindable",
 					bindableFilterClass: ".bindable",
