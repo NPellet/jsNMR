@@ -1,5 +1,5 @@
 
-define( [ 'require', 'graph' ], function( require, Graph ) {
+define( [ 'jsgraph' ], function( Graph ) {
 
 	"use strict";
 	var lineHeight = 5;

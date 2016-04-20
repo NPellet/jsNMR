@@ -1,34 +1,18 @@
+'use strict';
 
-
-
-
-requirejs.config({
-
+require.config({
 	baseUrl: '../',
 	paths: {
-		'jquery': './lib/components/jquery/dist/jquery.min',
-		'jqueryui': './lib/components/jquery-ui/ui/minified/jquery-ui.min',
-		'highlightjs': './lib/lib/highlight/highlight.pack',
-		'forms': './lib/lib/forms/form',
-		'components': './lib/components',
-
-		'graph': './lib/components/jsgraph/dist/jsgraph',
-		'shape1DNMR': './src/shape.1dnmr',
-		'assignment': './src/assignment',
-		'sd': './src/sd',
-
-		'jcampconverter': './lib/components/jcampconverter/build/jcampconverter',
-		'graphs': './lib/components/graph/src'
+		'jcampconverter': 'lib/components/jcampconverter/dist/jcampconverter',
+		'jquery': 'lib/components/jquery/dist/jquery.min',
+		'jqueryui': 'lib/components/jquery-ui/ui/minified/jquery-ui.min',
+		'jsgraph': 'lib/components/jsgraph/dist/jsgraph'
 	}
 });
 
-
-
-require([ '../src/nmr.js' ], function( NMRHandler ) {
-
+require([ 'src/nmr' ], function( NMRHandler ) {
 
 	$( document ).ready( function() {
-
 
 		var nmr = new NMRHandler({
 			dom: $("#nmr2"),
@@ -88,14 +72,7 @@ require([ '../src/nmr.js' ], function( NMRHandler ) {
 			lineColor: 'green',
 			label: 'Some molecule'
 
-		})
+		});
 	});
 
-
-
-
 });
-
-
-
-

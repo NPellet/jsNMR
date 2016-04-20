@@ -610,7 +610,7 @@
     if( typeof define === "function" && define.amd ) {
         
 
-        define( [ 'graph', 'shape1DNMR', 'assignment', 'jcampconverter', 'sd' ], function( Graph, Shape1DNMR, Assignment, JcampConverter, SD ) {
+        define( [ 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter', './sd' ], function( Graph, Shape1DNMR, Assignment, JcampConverter, SD ) {
             return factory( Graph, Shape1DNMR, Assignment, JcampConverter );
 
         });

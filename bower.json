@@ -1,5 +1,5 @@
 {
-  "name": "jsNMR",
+  "name": "jsnmr",
   "version": "0.0.1",
   "homepage": "https://github.com/NPellet/jsNMR/",
   "main": [],
@@ -25,10 +25,11 @@
     "package.json"
   ],
   "devDependencies": {
-    "requirejs": "~2.1.14"
+    "requirejs": "^2.2.0"
   },
   "dependencies": {
-    "jcampconverter": "~2.0.1",
-    "jsgraph": "latest"
+    "jcampconverter": "^2.3.0",
+    "jquery": "^2.2.1",
+    "jsgraph": "v1.13.3-51"
   }
 }
