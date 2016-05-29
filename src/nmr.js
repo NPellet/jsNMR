@@ -69,40 +69,32 @@
 			} );
 		}
 
+		var ratio, ratioSum;
 
-		function integral_resizemove( nmr, mode, noLoop ) {
+		var integrals = [];
+
+		function recalculateIntegrals( nmr, mode, noLoop ) {
 
 			var sumMax = 0;
+			var l = integrals.length;
 
 
-			for( var i = 0, l = nmr.integrals[ mode ].length; i < l ; i ++ ) {
-				nmr.integrals[ mode ][ i ].redraw();
-				sumMax = Math.max( sumMax, nmr.integrals[ mode ][ i ].lastSum );
+			if( l == 1 ) {
+				ratio = 150 / integrals[ 0 ].sum;
+				ratioSum = integrals[ 0 ].sum;
 			}
 
+			for( var i = 0; i < l ; i ++ ) {
 
-			for( var i = 0, l = nmr.integrals[ mode ].length; i < l ; i ++ ) {
+				integrals[ i ].ratio = ratio;
 
-
-				nmr.integrals[ mode ][ i ].ratio = Math.abs( sumMax == 0 ? 1 : nmr.integrals[ mode ][ i ].lastSum / sumMax );
-
-				if( nmr.integralBasis ) {
-
-					var text = Math.round( nmr.integrals[ mode ][ i ].lastSum / nmr.integralBasis * 100 ) / 100;
-
-					if( isNaN( text ) ) {
-						continue;
-					}
-
-					nmr.integrals[ mode ][ i ].setLabelText( text );
-				} else {
-
-					nmr.integrals[ mode ][ i ].setLabelText( 1 );	
+				var text = Math.round( integrals[ i ].sum / ratioSum * 100 ) / 100;
+				if( ! isNaN( text ) ) {
+					integrals[ i ].setLabelText( text );
 				}
-				
-				//nmr.integrals[ mode ][ i ].setLabelPosition( {0 );
-				nmr.integrals[ mode ][ i ].updateLabels();
 
+				//nmr.integrals[ mode ][ i ].setLabelPosition( {0 );
+				integrals[ i ].updateLabels();
 			}
 		}
 
@@ -128,22 +120,22 @@
 
 			nmr1dshapes.push( integral );
 
-			if( nmr.graphs[ mode ].selectedSerie ) {
-				integral.setSerie( nmr.graphs[ mode ].selectedSerie );	
+			if( nmr.graphs.selectedSerie ) {
+				integral.setSerie( nmr.graphs.selectedSerie );	
 			} else {
-				integral.setSerie( nmr.graphs[ mode ].getSerie( 0 ) );	
+				integral.setSerie( nmr.graphs.getSerie( 0 ) );	
 			}
-			
+		/*	
 			var nmrint = makeNMRIntegral( nmr, mode, integral )
 				nmrint.setSerie( integral.getSerie() );
+		*/	
+			integral.integral = integral;
 			
-			integral.integral = nmrint;
-			
-			nmrint.setProp( 'position', integral.getProp( 'position', 0 ), 0 );
-			nmrint.setProp( 'position', integral.getProp( 'position', 1 ), 1 );
+			//nmrint.setProp( 'position', integral.getProp( 'position', 0 ), 0 );
+			//nmrint.setProp( 'position', integral.getProp( 'position', 1 ), 1 );
 
-			nmr.integrals[ mode ].push( nmrint );
-			nmrint.originalShape = integral;
+			integrals.push( integral );
+			//nmrint.originalShape = integral;
 		}
 
 		function integralChanged( nmr, mode, peak ) {
@@ -151,7 +143,7 @@
 			if( ! peak.integral ) {
 				return;
 			}
-
+/*
 			peak.integral.setPosition();
 
 			if( peak.syncTo ) {
@@ -164,7 +156,8 @@
 			}
 		
 
-			integral_resizemove( nmr, mode );
+			recalculateIntegrals( nmr, mode );
+			*/
 		}
 
 
@@ -189,7 +182,7 @@
 				}
 			}
 
-			integral_resizemove( nmr, mode );
+			recalculateIntegrals( nmr, mode );
 		}
 
 		function getOtherMode( nmr, mode ) {
@@ -198,7 +191,7 @@
 
 
 		function makeNMRIntegral( nmr, mode, integral ) {
-
+			// External call
 			var shape = nmr.graphs[ mode ].newShape( { 
 					type: 'nmrintegral', 
 					fillColor: 'transparent', 
@@ -224,32 +217,6 @@
 			return shape;
 		}
 		
-
-		function getNmrSignal1dHandlers( nmr, mode ) {
-
-			return { 
-
-				shapeOptions: {
-
-					onCreate: function() {
-						integralCreated( nmr, mode, this );
-					},
-
-					onResize: function() {
-						integralResized( nmr, mode, this );
-					},
-
-					onMove: function() {
-						integralMoved( nmr, mode, this );
-					}/*,
-
-					onRemove: function() {
-						integralRemoved( nmr, mode, this );
-					}*/
-				}
-			}
-		}
-
 		function removeSerie( nmr, axis, name ) {
 
 			var serie;
@@ -265,24 +232,11 @@
 			
 		function doNMR( nmr ) { 
 
-			switch( nmr.getMode() ) {
-
-				case '1d':
-
-				//console.time("Making the whole graph");
+		
+		
 					nmr.options.dom.append('<div />');
 					nmr.makeGraphs1D();
-				//	console.timeEnd("Making the whole graph");
-
-				break;
-
-				case '2d':
-
-					nmr.options.dom.append('<div class="nmr-table-wrapper"><div class="nmr-2d-map" style="width: 150px; height: 150px; position: absolute; right: 0; bottom: 0"></div><table cellpadding="0" cellspacing="0" class="nmr-wrapper"><tr><td></td><td class="nmr-1d nmr-1d-x nmr-main" style="width: 500px; height: 150px;"></td></tr><tr class="nmr-main"><td class="nmr-1d nmr-1d-y"style="height: 500px; width: 150px;"></td><td class="nmr-2d" style="height: 500px; width: 500px;"></td></tr></table></div>');
-					nmr.makeGraphs2D();
-				break;
-
-			}
+		
 		}
 	
 
@@ -320,7 +274,7 @@
 				break;
 
 				case '1d':
-					this.legend = this.graphs.x.makeLegend( { frame: true, frameWidth: 2, frameColor: 'grey', movable: true, backgroundColor: 'white' } );
+					this.legend = this.graphs.makeLegend( { frame: true, frameWidth: 2, frameColor: 'grey', movable: true, backgroundColor: 'white' } );
 					this.legend.setPosition( { x: "300px", y: "40px" }, 'right' );
 
 				break;
@@ -384,8 +338,8 @@
 		}
 
 		NMR.prototype.resize1DTo = function( w, h ) {
-			this.graphs[ 'x' ].resize( w, h );
-			this.graphs[ 'x' ].drawSeries();
+			this.graphs.resize( w, h );
+			this.graphs.drawSeries();
 		}
 
 		NMR.prototype.removeSerieX = function( name ) {
@@ -394,15 +348,15 @@
 
 		NMR.prototype.setSerieX = function( name, data, options ) {
 
-			if( this.graphs[ 'x' ].getSerie( name ) ) {
+			if( this.graphs.getSerie( name ) ) {
 
-				this.graphs[ 'x' ].getSerie( name ).kill();
-				this.graphs[ 'x' ].removeShapes();
+				this.graphs.getSerie( name ).kill();
+				this.graphs.removeShapes();
 				this.integralBasis = false;
 
 			}
 
-			var serie_x = this.graphs[ 'x' ].newSerie( name, $.extend( { useSlots: true }, options ) )
+			var serie_x = this.graphs.newSerie( name, $.extend( { useSlots: true }, options ) )
 				.setLabel( "My serie" )
 				.autoAxis()
 				.setData( data )
@@ -429,8 +383,8 @@
 			serie_x.getYAxis().setDisplay( false ).primaryGridOff( false ).secondaryGridOff( false );
 			serie_x.getXAxis().flip(true).setLabel('ppm').primaryGridOff( false ).secondaryGridOff( false ).setTickPosition( 'outside' )
 
-			this.graphs.x.autoscaleAxes();
-			this.graphs.x.draw();
+			this.graphs.autoscaleAxes();
+			this.graphs.draw();
 		}
 
 
@@ -457,7 +411,7 @@
 
 			var self = this;
 
-			this.graphs['x'] = new Graph( this.getDom().children().get(0), {
+			this.graphs = new Graph( this.getDom().children().get(0), {
 
 				close: { left: false, top: false, right: false },
 				paddingBottom: 0,
@@ -472,8 +426,9 @@
 					},
 
 					'shape': { 
-						type: '1dnmr',
+						type: 'nmrintegral',
 						strokeColor: '#AF002A', 
+						fillColor: "transparent",
 						strokeWidth: 2,
 
 						locked: false,
@@ -482,19 +437,25 @@
 						selectable: true,
 						selectOnMouseDown: true,
 						handles: true,
+						labelEditable: true,
 
 						horizontal: true, 
 						forcedCoords: { y: function( shape ) { return ( 20 + shape.serie.getIndex() * 5 ) + "px"; } },
 						bindable: true,
 						axis: 'x',
 
+						labels: [ { text: "Something", color: 'red' } ] ,
+
+
+
 						attributes: { 'data-bindable': function() { return 1; } },
 
-						onNewShape: function( shape ) {
-							
-							shape.setSerie( self.graphs[ 'x' ].getSerie( 0 ) );
-							//shape.setAttributes( { 'data-assignation': Math.random() } );
+						onCreatedShape: function( shape ) {
+							//console.log( self.graphs[ 'x' ].getSerie( 0 ) );
+							shape.setSerie( self.graphs.getSerie( 0 ) );
+							integralCreated( self, 'x', shape );
 						},
+
 
 						highlightOnMouseOver: true
 					},
@@ -535,39 +496,40 @@
 			} );
 
 
-			this.graphs[ 'x' ].setHeight(300);
+			this.graphs.setHeight(300);
 	
 
-			this.graphs[ 'x' ].on("shapeChanged", function( shape ) {
+			this.graphs.on("shapeChanged", function( shape ) {
 
 				
-				if( shape.getType() == "1dnmr" ) {
 
-					shape.integral.setPosition( shape.getPosition( 0 ), 0 );
-					shape.integral.setPosition( shape.getPosition( 1 ), 1 );
+				if( shape.getType() == "nmrintegral" ) {
 
-					if( ! self.integralBasis || nmr1dshapes.length == 1 ) {
+					recalculateIntegrals( self );
 
-						self.integralBasis = shape.integral.lastSum;
-					}
-
-				} else if( shape.getType() == "nmrintegral" ) {
-
-					if( self.integralBasis ) {
-
-						var fl = parseFloat( shape.data.label[ 0 ].text );
-
-						if( fl != 0 ) {
-							self.integralBasis = shape.lastSum / fl;
-						}
-					}					
 				}
 
-				integral_resizemove( self, 'x' );
+
+
+				
 			});
 
+			this.graphs.on("shapeLabelChanged", function( shape ) {
 
 
+				if( shape.getType() == "nmrintegral" ) {
+
+					var fl = parseFloat( shape.getLabelText( 0 ) );
+					ratioSum = shape.sum / fl;
+					recalculateIntegrals( self );
+
+				}
+
+
+
+			} );
+
+/*
 			this.graphs[ 'x' ].on("shapeRemoved", function( shape ) {
 
 				if( shape.integral ) {
@@ -589,15 +551,15 @@
 				}
 			});
 
-
+*/
 		
 			/********************************************/
 			/** DRAW ALL ********************************/
 			/********************************************/
 
 
-			this.graphs[ 'x' ].redraw( );	
-			this.graphs[ 'x' ].drawSeries();	
+			this.graphs.redraw( );	
+			this.graphs.drawSeries();	
 
 		}
 
