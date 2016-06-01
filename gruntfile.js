@@ -28,9 +28,13 @@ module.exports = function(grunt) {
 
         bump: {
             options: {
-                files: ['package.json'],
+                files: ['package.json', 'bower.json'],
                 updateConfigs: [ 'pkg' ],
-                push: false
+                createTag: true,
+                push: true,
+                pushTo: 'origin',
+                commitFiles: ['-a'],
+                runTasks: ['default']
             }
         },
         
@@ -110,6 +114,14 @@ module.exports = function(grunt) {
         });
         
         grunt.file.write( './dist/jsnmr.min.js', processSource( source ) );
+
+    });
+
+    grunt.registerTask( 'patch', function () {
+
+        grunt.task.run('bump:patch:bump-only');
+        grunt.task.run('default');
+        grunt.task.run('bump:patch:commit-only');
 
     });
 };
