@@ -1,4 +1,19 @@
 
+var baseOptions = {
+    baseUrl: './src',
+    name: 'build_utils/almond',
+    useStrict: true,
+    include: ['nmr'],
+    paths: {
+        jsgraph: 'empty:',
+        jquery: 'empty:',
+        jcampconverter: 'empty:'
+    },
+    wrap: {
+        startFile: './src/build_utils/wrap.start.js',
+        endFile: './src/build_utils/wrap.end.js'
+    }
+};
 
 module.exports = function(grunt) {
 
@@ -22,6 +37,11 @@ module.exports = function(grunt) {
                     '../visualizer-dev/src/components/jsNMR/src/nmr.js': 'src/nmr.js',
                      '../visualizer-dev/src/components/jsNMR/src/shape.1dnmr.js': 'src/shape.1dnmr.js'
                 }
+            },
+
+            targos: {
+                src: './dist/jsnmr.js',
+                dest: '../visualizer/src/components/jsnmr/dist/jsnmr.js'
             }
             
         },
@@ -40,32 +60,18 @@ module.exports = function(grunt) {
         
         requirejs: {
             compile: {
-                options: {
-                    baseUrl: './',
-                    include: ['./src/nmr.js'],
+                options: Object.assign({}, baseOptions, {
                     out: 'dist/jsnmr.js',
-                    paths: {
-                        jsgraph: 'empty:',
-                        jquery: 'empty:',
-                        jcampconverter: 'empty:'
-                    },
                     optimize: 'none'
-                }
+                })
             },
             compileMin: {
-                options: {
-                    baseUrl: './',
-                    include: ['./src/nmr.js'],
+                options: Object.assign({}, baseOptions, {
                     out: 'dist/jsnmr.min.js',
-                    paths: {
-                        jsgraph: 'empty:',
-                        jquery: 'empty:',
-                        jcampconverter: 'empty:'
-                    },
                     optimize: 'uglify2',
                     generateSourceMaps: true,
                     preserveLicenseComments: false
-                }
+                })
             }
         }
     });
@@ -74,11 +80,8 @@ module.exports = function(grunt) {
 
     var fs = require('fs');
 
-    grunt.loadNpmTasks('grunt-sass');
-    grunt.loadNpmTasks('grunt-sloc');
     grunt.loadNpmTasks('grunt-contrib-requirejs');
     grunt.loadNpmTasks('grunt-contrib-copy');
-    grunt.loadNpmTasks('grunt-contrib-clean');
     grunt.loadNpmTasks('grunt-bump');
 
     grunt.registerTask('default', [ 'requirejs', 'concatSource', 'concatMin' ]);

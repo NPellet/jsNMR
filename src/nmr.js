@@ -1,4 +1,4 @@
-define( [ 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter' ], function( Graph, Shape1DNMR, Assignment, JcampConverter ) {
+define( [ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter' ], function( $, Graph, Shape1DNMR, Assignment, JcampConverter ) {
 
 	// Root here
 	var defaults = {
@@ -226,6 +226,7 @@ define( [ 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter' ], functi
 	
 	}
 
+	Graph.registerConstructor("graph.shape.1dnmr", Shape1DNMR);
 
 	function NMR( options ) {
 
@@ -233,10 +234,6 @@ define( [ 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter' ], functi
 		this.series = [];
 
 		// 1D
-	
-
-		Graph.registerConstructor("graph.shape.1dnmr", Shape1DNMR);
-		var self = this;
 		
 /*
 		if( this.isSymmetric() ) {
