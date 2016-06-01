@@ -1,5 +1,5 @@
 /*!
- * jsNMR JavaScript Graphing Library v0.0.4
+ * jsNMR JavaScript Graphing Library v0.0.5
  * http://github.com/NPellet/jsNMR
  *
  * Copyright 2014 Norman Pellet and other authors
@@ -7,7 +7,7 @@
  *
  * Released under the MIT license
  *
- * Date: 2016-06-01T13:55Z
+ * Date: 2016-06-01T14:08Z
  */
 
 define(['jquery', 'jsgraph', 'jcampconverter'], function($, Graph, JcampConverter) {
@@ -1382,7 +1382,7 @@ define( 'nmr',[ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconv
 
 	function makeNMRIntegral( nmr, mode, integral ) {
 		// External call
-		var shape = nmr.graphs[ mode ].newShape( { 
+		var shape = nmr.graphs.newShape( { 
 				type: 'nmrintegral', 
 				fillColor: 'transparent', 
 				strokeColor: '#AF002A', 
@@ -1410,12 +1410,12 @@ define( 'nmr',[ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconv
 	function removeSerie( nmr, axis, name ) {
 
 		var serie;
-		if( ( serie = nmr.graphs[ axis ].getSerie( name ) ) ) {
+		if( ( serie = nmr.graphs.getSerie( name ) ) ) {
 			serie.kill();
 		}
 
-		nmr.graphs[ axis ].redraw();
-		nmr.graphs[ axis ].drawSeries();
+		nmr.graphs.redraw();
+		nmr.graphs.drawSeries();
 
 	}
 

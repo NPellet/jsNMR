@@ -181,7 +181,7 @@ define( [ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter'
 
 	function makeNMRIntegral( nmr, mode, integral ) {
 		// External call
-		var shape = nmr.graphs[ mode ].newShape( { 
+		var shape = nmr.graphs.newShape( { 
 				type: 'nmrintegral', 
 				fillColor: 'transparent', 
 				strokeColor: '#AF002A', 
@@ -209,12 +209,12 @@ define( [ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter'
 	function removeSerie( nmr, axis, name ) {
 
 		var serie;
-		if( ( serie = nmr.graphs[ axis ].getSerie( name ) ) ) {
+		if( ( serie = nmr.graphs.getSerie( name ) ) ) {
 			serie.kill();
 		}
 
-		nmr.graphs[ axis ].redraw();
-		nmr.graphs[ axis ].drawSeries();
+		nmr.graphs.redraw();
+		nmr.graphs.drawSeries();
 
 	}
 
