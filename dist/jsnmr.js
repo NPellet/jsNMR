@@ -1,5 +1,5 @@
 /*!
- * jsNMR JavaScript Graphing Library v0.0.3
+ * jsNMR JavaScript Graphing Library v0.0.4
  * http://github.com/NPellet/jsNMR
  *
  * Copyright 2014 Norman Pellet and other authors
@@ -7,7 +7,7 @@
  *
  * Released under the MIT license
  *
- * Date: 2016-06-01T13:37Z
+ * Date: 2016-06-01T13:55Z
  */
 
 define(['jquery', 'jsgraph', 'jcampconverter'], function($, Graph, JcampConverter) {
@@ -1199,7 +1199,7 @@ define( 'assignment',[ 'jquery' ], function( $ ) {
 
 });
 
-define( 'nmr',[ 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter' ], function( Graph, Shape1DNMR, Assignment, JcampConverter ) {
+define( 'nmr',[ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter' ], function( $, Graph, Shape1DNMR, Assignment, JcampConverter ) {
 
 	// Root here
 	var defaults = {
@@ -1435,7 +1435,6 @@ define( 'nmr',[ 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter' ], 
 		this.series = [];
 
 		// 1D
-	
 		
 /*
 		if( this.isSymmetric() ) {
