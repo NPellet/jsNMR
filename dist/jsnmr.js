@@ -7,9 +7,1777 @@
  *
  * Released under the MIT license
  *
- * Date: 2014-12-08T21:07Z
+ * Date: 2016-06-01T11:42Z
  */
 
+
+define( 'src/shape.1dnmr',[ 'jquery', 'jsgraph' ], function( $, Graph ) {
+
+	"use strict";
+	var lineHeight = 5;
+	var GraphLine = Graph.getConstructor( 'graph.shape.line' );
+
+	function GraphNmrSignal1D( graph, options ) {
+
+		this.options = options || 2;
+		
+	}
+
+	$.extend(GraphNmrSignal1D.prototype, GraphLine.prototype, {
+		
+		createDom: function() {
+			
+
+	      this._createHandles( 2, 'rect', {
+	        transform: "translate(-3 -3)",
+	        width: 6,
+	        height: 6,
+	        stroke: "black",
+	        fill: "white",
+	        cursor: 'nwse-resize'
+	      } );
+
+			this._dom = document.createElementNS(this.graph.ns, 'line');
+			this.maxLines = 64;
+			this.nbLines = 0;
+
+			this.maxLines = 0;
+
+
+			this.lines = new Array(this.maxLines);
+			
+
+			/*this._createHandles( this.nbHandles, 'rect', { 
+				transform: "translate(-3 -3)", 
+				width: 6, 
+				height: 6, 
+				stroke: "black", 
+				fill: "white",
+				cursor: 'nwse-resize'
+			} );*/
+
+
+			//I dont know how to remove the previous lines, so, I'll create an array of
+			//empty lines that can be filled up by the system.
+			for(var i=this.maxLines-1;i>=0;i--){
+				this.lines[i] = document.createElementNS( this.graph.ns, 'line');
+				this.group.appendChild( this.lines[i]);
+				this.lines[i].setAttribute('stroke', 'green');
+			}
+			
+			// calculate a "hard"-threshold as in
+			// IEEE Transactions on biomedical engineering, vol. 52, no. 1, january
+			// 2005, p. 76-
+			// keep the number of standard deviations variable
+			//nbStandardDeviations=1;
+			var j,mean=0,std=0,max = 0;
+			var serie = this.graph.series[0].data[0];
+			//console.log(serie.length);
+			for(j=0;j<serie.length;j+=2){
+				if(Math.abs(serie[ j + 1 ])>max)
+					max = Math.abs(serie[ j + 1 ]);
+			}
+			for(j=0;j<serie.length;j+=2){
+				mean+=serie[ j + 1 ]/max;
+			}
+			for(j=0;j<serie.length;j+=2)
+				std+=Math.pow(mean-serie[ j + 1 ]/max,2);
+			std=Math.sqrt(max)*Math.sqrt(std*2/serie.length);
+			this.noiseLevel = std*3;//3 is the given number of std for nucleus 1H. For 13C it is 1.
+			//console.log("noiseLevel "+this.noiseLevel);
+			//this.noiseLevel = 4e6;
+			
+			this._dom.element = this;
+		},
+
+
+		redrawImpl: function() {
+
+			this.setHandles();
+			this.redrawLines( lineHeight );
+			//this.setBindableToDom( this._dom );
+		},
+
+
+		redrawLines: function( height ) {
+
+			if( this.maxLines == 0 ) {
+				return;
+			}
+
+			var peaks = this.findxs();
+			//this.lines = [];
+			for(var i=peaks.length-1;i>=0;i--){
+			    //TODO How to know the base of the spectrum?????
+			    var baseLine = this._getPosition( { x: 10 } );
+				var x1 = this._getPosition( { x: peaks[i][0] } );
+				if( this.lines[i] && x1.x && this.currentPos2y && this.currentPos1y && i<this.maxLines ) {
+					this.lines[i].setAttribute('stroke', 'green');
+					this.lines[i].setAttribute('x1', x1.x );
+					this.lines[i].setAttribute('x2', x1.x );
+					this.lines[i].setAttribute('y1', x1.y);
+					this.lines[i].setAttribute('y2', baseLine.y  );
+					this.lines[i].setAttribute('on', true );
+
+				}
+			}
+			for(var i=peaks.length;i<this.nbLines;i++){
+
+				if( this.lines[i] ) {
+				    this.lines[i].setAttribute('y1', parseFloat(this.lines[i].getAttribute('y2')));
+				    this.lines[i].setAttribute('x1', -1000000 );
+					this.lines[i].setAttribute('x2', -1000000 );
+					this.lines[i].setAttribute('on', false );
+				}
+			}
+
+			this.nbLines = peaks.length;
+
+		},
+
+		highLigthLinesY: function( height ) {
+			for(var i=this.lines.length-1;i>=0;i--){
+				if(this.lines[i].getAttribute('on')=="true")
+					this.lines[i].setAttribute('y1', parseFloat(this.lines[i].getAttribute('y1'))-height);
+			}
+		},
+
+
+		findxs: function() {
+			var v1 = this.serie.searchClosestValue( this.getFromData( 'pos' ).x ),
+				v2 = this.serie.searchClosestValue( this.getFromData( 'pos2' ).x ),
+				v3,
+				init,
+				max,
+				x=[],
+				y=[];
+				
+			if(! v1 || ! v2) {
+				return false;
+			}
+		    
+			for(var i = v1.dataIndex; i <= v2.dataIndex ; i++) {
+
+				init = i == v1.dataIndex ? v1.xBeforeIndexArr : 0;
+				max = i == v2.dataIndex ? v2.xBeforeIndexArr : this.serie.data[i].length;
+				k = 0;
+				
+				for(j = init; j <= max; j+=2) {
+					x.push(this.serie.data[ i ][ j + 0 ]);
+					y.push(this.serie.data[ i ][ j + 1 ]);
+					
+				}
+			}
+			
+			
+			
+			for(var i=y.length-1;i>=0;i--)
+  				if(Math.abs(y[i])<this.noiseLevel)
+    				y[i]=0;
+			
+			var dx = x[1]-x[0];
+			// fill convolution frecuency axis
+			var X = []//x[2:(x.length-2)];
+	
+			// fill Savitzky-Golay polynomes
+			var Y = [];
+			var dY = [];
+			var ddY = [];
+			for (var j = 2; j < x.length -2; j++){
+				Y.push((1/35.0)*(-3*y[j-2] + 12*y[j-1] + 17*y[j] + 12*y[j+1] - 3*y[j+2]));
+				X.push(x[j]);
+				dY.push((1/(12*dx))*(y[j-2] - 8*y[j-1] + 8*y[j+1] - y[j+2]));
+				ddY.push((1/(7*Math.abs(dx*2)))*(2*y[j-2] - y[j-1] - 2*y[j] - y[j+1] + 2*y[j+2]));
+			}
+		
+			// pushs max and min points in convolution functions
+			var maxY = [];
+			var stackInt = [];
+			var intervals = [];
+			var minddY = [];
+			for (var i = 1; i < Y.length -1 ; i++)
+			{
+				if ((Y[i] > Y[i-1]) && (Y[i] > Y[i+1]))
+				{
+					maxY.push(X[i]);
+				}
+				if ((dY[i] < dY[i-1]) && (dY[i] < dY[i+1]))
+				{
+					stackInt.push(X[i]);
+				}
+				if ((dY[i] > dY[i-1]) && (dY[i] > dY[i+1]))
+				{
+					try{
+						intervals.push( [X[i] , stackInt.pop()] );
+					}
+					catch(e){
+						console.log("Error I don't know why");
+					}
+				}
+				if ((ddY[i] < ddY[i-1]) && (ddY[i] < ddY[i+1]))
+				{
+					minddY.push( [X[i], Y[i]] );
+				}
+			}
+		    //console.log(intervals.length);
+			// creates a list with (frecuency, linewith, height)
+			var signals = new Array();
+			for (var j = 0; j < minddY.length; j++)
+			{
+				var f = minddY[j];
+				var frecuency = f[0];
+				var possible = new Array();
+				for (var k=0;k<intervals.length;k++){
+				    var i = intervals[k];
+					if (frecuency > i[0] && frecuency < i[1])
+						possible.push(i);
+				}
+				//console.log("possible "+possible.length);
+				if (possible.length > 0)
+					if (possible.length == 1)
+					{
+						var inter = possible[0];
+						var linewith = inter[1] - inter[0];
+						var height = f[1];
+						var points = Y;
+						//console.log(frecuency);
+						points.sort(function(a, b){return a-b});
+						if ((linewith > 2*dx) && (height > 0.0001*points[0]))
+							signals.push( [frecuency, linewith, height] );
+					}
+					else
+					{
+						//TODO: nested peaks
+					//	console.log(possible);
+					}
+			}
+			//console.log(signals);
+			return signals;
+		}
+	});
+
+	return GraphNmrSignal1D;
+});
+
+
+/*!
+ * jsGraphs JavaScript Graphing Library v1.1.1
+ * http://github.com/NPellet/jsGraphs
+ *
+ * Copyright 2014 Norman Pellet
+ * Released under the MIT license
+ *
+ * Date: 2016-06-01T11:42Z
+ */
+
+(function( global, factory ) {
+
+	if ( typeof module === "object" && typeof module.exports === "object" ) {
+		
+		module.exports = factory( global );
+			
+	} else {
+
+		factory( global );
+
+	}
+
+// Pass this if window is not defined yet
+}( ( typeof window !== "undefined" ? window : this ), function( window ) {
+
+	"use strict";
+
+	var ns = 'http://www.w3.org/2000/svg';
+
+		var Constructor = function( options ) {
+
+		//	domMolecule, domGraphs, domGlobal, moleculeFilter, graphs
+			var self = this;
+
+			this.options = options;
+			this.bindingPairs = [];
+
+			var binding = false,
+			bindingA = false,
+			bindingB = false,
+			bindingLine,
+			highlighted = {},
+			targetting,
+			stashedLines = [],
+			currentLines = [],
+
+			mousedown = function( el, event, element ) {
+
+				checkBindingPairs();
+
+				if( event.shiftKey ) {
+
+					for( var i in options.graphs ) { // We need to lock all graphs to prevent actions on the shapes.
+						options.graphs[ i ].lockShapes();	
+					}
+					
+					binding = true;
+					self[ element ] = el;
+
+					event.preventDefault();
+					event.stopPropagation();
+				}
+
+				// Try to be smart and determine where to put the line ?
+
+				var bb = el.getBBox();
+				var pos = $( el ).position(),
+
+				x = pos.left + bb.width / 2,
+				y = pos.top + bb.height / 2;
+
+				bindingLine.setAttribute('display', 'block');
+
+				bindingLine.setAttribute('x1', x );
+				bindingLine.setAttribute('x2', x );
+
+				bindingLine.setAttribute('y1', y );
+				bindingLine.setAttribute('y2', y );
+
+
+
+				targetting = otherTarget( element ); 
+				if( options[ otherTarget( element ) ].targettable ) {
+
+					var targetEls = findTargettableElements( otherTarget( element ) );
+
+					targetEls.each( function( ) {
+
+						if( this.jsGraphIsShape ) {
+
+							this.jsGraphIsShape.highlight( options[ otherTarget( element ) ].targettable, "binding" );
+
+						} else {
+
+							storeAttributes( options[ otherTarget( element ) ].targettable, $( this ) );
+							$( this ).attr( options[ otherTarget( element ) ].targettable );
+
+						}
+					} );
+				}
+
+			},
+
+			otherTarget = function( target ) {
+
+				if( target == "jsGraphShape") {
+					return "targetB";
+				}
+
+				return "jsGraphShape";
+			},
+
+			findTargettableElements = function( target ) {
+
+				return $( options[ target ].dom ).find( options[ target ].bindableFilter );
+			},
+
+
+			mouseup = function( el, event, target ) {
+
+				checkBindingPairs();
+				
+
+				if( targetting ) {
+
+					if( options[ targetting ].targettable ) {
+
+						var targetEls = findTargettableElements( targetting );
+
+						targetEls.each( function( ) {
+
+							if( this.jsGraphIsShape ) {
+
+								this.jsGraphIsShape.unHighlight( "binding" );
+
+							} else {
+
+								restoreAttributes( options[ targetting ].targettable, $( this ) );
+							}
+						} );
+					}
+				
+
+				}
+
+				targetting = false;
+				
+				if( binding && ! target ) {
+					bindingLine.setAttribute('display', 'none');
+					binding = false;
+					
+					return;
+				}
+
+				if( ! binding ) {
+					return;
+				}
+
+				var domTarget = event.target;
+	
+				
+				bindingLine.setAttribute('display', 'none');
+
+				if( ! $( domTarget ).is( options[ target ].bindableFilter ) && ! $( domTarget ).get( 0 ).classList.contains( options[ target ].bindableFilterClass ) > -1 ) {
+
+					binding = false;
+
+				} else {
+
+					self[ target ] = event.target;
+
+
+					binding = false;
+					bindSave();
+
+		
+
+				}
+
+				
+				
+				for( var i in options.graphs ) { // We can now unlock everything
+					options.graphs[ i ].unlockShapes();	
+				}			
+			},
+
+			mousemove = function( e ) {
+
+				checkBindingPairs();
+				
+
+				if( ! binding ) {
+					return;
+				}
+
+				bindingLine.setAttribute('x2', e.clientX + window.scrollX );
+				bindingLine.setAttribute('y2', e.clientY + window.scrollY );
+			},
+
+			highlight = function( element, target ) {
+				
+				checkBindingPairs();
+				
+				var elements = [ element ];
+				if( options[ target ].highlighted ) {
+					elements = getEquivalents( target, element );
+					highlightEquivalents( target, elements );
+				}
+				
+				//getEquivalents( target, selector );
+
+
+				var eqs = [];
+				
+//				unhighlight( element, target );
+				for( var i = 0, l = elements.length; i < l; i ++ ) {
+			
+					allPairs( highlightPair, elements[ i ], function( pair ) {
+						eqs = eqs.concat( $.makeArray( getEquivalents( otherTarget( target ), pair[ otherTarget( target ) ] ) ) );
+					} );
+				}
+
+				
+				eqs = $( eqs );
+				
+				if( options[ otherTarget( target ) ].highlighted ) {
+					highlightEquivalents( otherTarget( target ), eqs );
+				}
+				
+			},
+
+			unhighlight = function( element, target, force ) {
+
+			/*	if( binding && ! force) {
+					return;
+				}
+*/
+				checkBindingPairs();
+				var elements = getEquivalents( target, element );
+				
+				var eqs = [];
+
+				for( var i = 0; i < elements.length; i ++ ) {
+
+					allPairs( unhighlightPair, elements[ i ], function( pair ) {
+						eqs = eqs.concat( $.makeArray( getEquivalents( otherTarget( target ), pair[ otherTarget( target ) ] ) ) );
+					} );
+				}
+
+
+				highlighted.jsGraphShape.map( function( el ) {
+					this.jsGraphIsShape.unHighlight( "assignmentHighlighted");
+				} );
+
+				restoreAttributes( options.targetB.highlighted, highlighted.targetB );
+				
+			},
+
+			highlightEquivalents = function( target, elementsToHighlight ) {
+
+				var highlightedAttributes = options[ target ].highlighted;
+
+				if( elementsToHighlight[ 0 ] && elementsToHighlight[ 0 ].jsGraphIsShape ) {
+
+					elementsToHighlight.map( function( el ) {
+
+						this.jsGraphIsShape.highlight( highlightedAttributes, "assignmentHighlighted");
+					} );
+
+				} else {
+
+					storeAttributes( highlightedAttributes, elementsToHighlight );
+					elementsToHighlight.attr( highlightedAttributes );
+
+				}
+
+				highlighted[ target ] = elementsToHighlight;
+
+			},
+
+			getEquivalents = function( target, element ) {
+				var selector = element.getAttribute( options[ target ].attributeEquivalents );
+				return $( options[ target ].dom ).find( "[" + options[ target ].attributeEquivalents + "=\"" + selector + "\"]");
+			},
+
+			storeAttributes = function( attr, els ) {
+
+				for( var i in attr ) {
+					
+
+					for( var j = 0, l = els.length; j < l; j ++ )  {
+							
+						if( ! $( els[ j ]  ).data( "backup-" + i ) ) {	
+							$( els[ j ]  ).data( "backup-" + i, $( els[ j ]  ).attr( i ) );
+						}
+					}
+
+				}
+			},
+
+			restoreAttributes = function( attr, els ) {
+
+				for( var i in attr ) {
+
+					for( var j = 0, l = els.length; j < l; j ++ )  {
+
+						$( els[ j ] ).attr( i, $( els[ j ]  ).data('backup-' + i ) );
+					}
+				}
+			},
+
+			allPairs = function( fct, element, callback ) {
+
+				for( var i = 0, l = self.bindingPairs.length ; i < l ; i ++ ) {
+
+					if( self.bindingPairs[ i ].jsGraphShape == element || self.bindingPairs[ i ].targetB == element ) {
+
+						fct( self.bindingPairs[ i ] );
+
+						if( callback ) {
+							callback( self.bindingPairs[ i ] );
+						}
+					}
+				}
+			},
+
+			highlightPair = function( pair ) {
+
+
+				var posA = $( pair.jsGraphShape ).offset();
+				var posB = $( pair.targetB ).offset();
+
+				var bbA = $( pair.jsGraphShape )[ 0 ].getBBox();
+				var bbB = $( pair.targetB )[ 0 ].getBBox();
+
+				var posMain = options.domGlobal.offset();
+
+				var line;
+
+				if( stashedLines.length > 0 ) {
+					line = stashedLines.pop();
+					line.setAttribute('display', 'block');
+				} else {
+					line = document.createElementNS( ns, 'line');	
+				}
+
+				
+				line.setAttribute('stroke', 'black');
+				line.setAttribute('x1', posA.left - posMain.left + bbA.width / 2 );
+				line.setAttribute('y1', posA.top - posMain.top + bbA.height / 2  );
+				line.setAttribute('x2', posB.left - posMain.left + bbB.width / 2 );
+				line.setAttribute('y2', posB.top - posMain.top + bbB.height / 2 );
+
+				pair.line = line;
+				currentLines.push( line );
+
+				topSVG.appendChild( line );
+			},
+
+
+			unhighlightPair = function( pair ) {
+
+				pair.line = false;
+
+				currentLines.map( function( line ) {
+
+					line.setAttribute('display', 'none');
+
+				} );
+
+				stashedLines = stashedLines.concat( currentLines );
+				currentLines = [];
+	
+				
+			},
+
+			bindSave = function() {
+
+				var pair;
+				if( pair = lookForPair( self.jsGraphShape, self.targetB ) ) {
+					removePair( pair );
+					unhighlightPair( pair );
+					return false;
+				}
+
+				unhighlight( self.jsGraphShape, "jsGraphShape", true );
+
+				self.bindingPairs.push( { jsGraphShape: self.jsGraphShape, targetB: self.targetB } );
+
+				self.jsGraphShape.jsGraphIsShape.setStrokeDasharray("5,5");
+				self.jsGraphShape.jsGraphIsShape.applyStyle();
+			
+				bindingA = null;
+				bindingB = null;
+
+				console.log( self.getAssignment() );
+
+
+			},
+
+			removePair = function( pair ) {
+				self.bindingPairs.splice( self.bindingPairs.indexOf( pair ), 1 );
+			},
+
+			lookForPair = function( A, B ) {
+
+				self.bindingPairs.map( function( pair ) {
+
+					if( pair.jsGraphShape == A || pair.targetB == B ) {
+						return pair;
+					}
+				} );
+
+				return false;
+			},
+
+			checkBindingPairs = function() {
+
+				for( var i = 0, l = self.bindingPairs.length ; i < l ; i ++ ) {
+
+					if( $( options.jsGraphShape.dom ).get( 0 ).contains( self.bindingPairs[ i ].jsGraphShape ) && $( options.targetB.dom ).get( 0 ).contains( self.bindingPairs[ i ].targetB ) ) {
+						continue;
+					} else {
+
+						self.bindingPairs[ i ] = false;
+					}
+				}
+			},
+
+			setEvents = function( ) {
+
+				options.jsGraphShape.dom.on('mousedown', options.jsGraphShape.bindableFilter, function( e ) {
+					
+					mousedown( this, e, "jsGraphShape" );
+				});
+
+				options.jsGraphShape.dom.on('mouseover', options.jsGraphShape.bindableFilter, function( e ) {
+					
+					highlight( this, "jsGraphShape" );
+				});
+
+				options.jsGraphShape.dom.on('mouseout', options.jsGraphShape.bindableFilter, function( e ) {
+					unhighlight( this, "jsGraphShape" );
+				});
+
+				options.targetB.dom.on('mousedown', options.targetB.bindableFilter, function( e ) {
+					mousedown( this, e, "targetB" );
+				});
+
+				options.targetB.dom.on('mouseover', options.targetB.bindableFilter, function( e ) {
+					highlight( this, "targetB" );
+				});
+
+				options.targetB.dom.on('mouseout', options.targetB.bindableFilter, function( e ) {
+					unhighlight( this, "targetB" );
+				});
+
+				options.jsGraphShape.dom.on('mouseup', function( e ) {
+					mouseup( this, e, "jsGraphShape" );
+				});
+
+				options.targetB.dom.on('mouseup', function( e ) {
+					mouseup( this, e, "targetB" );
+				});
+
+				options.domGlobal.on('mouseup', function( e ) {
+					mouseup( this, e, false );
+				})
+
+				options.domGlobal.on('mousemove', function( e ) {
+					mousemove( e );
+				})
+			};
+
+
+			var topSVG = document.createElementNS( ns, 'svg' );
+			topSVG.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", "http://www.w3.org/1999/xlink");
+			topSVG.setAttribute('xmlns', ns );
+		
+			topSVG.setAttribute('style', 'position: absolute');
+			topSVG.setAttribute('width', options.domGlobal.width( ) )
+			topSVG.setAttribute('height', options.domGlobal.height( ) )
+			topSVG.setAttribute('pointer-events', 'none');
+
+			bindingLine = document.createElementNS( ns, 'line');
+			bindingLine.setAttribute('stroke', 'black');
+
+			topSVG.appendChild( bindingLine );
+
+			options.domGlobal.prepend( topSVG );
+			setEvents( );	
+	};
+
+	Constructor.prototype.getAssignment = function() {
+
+		var self = this;
+
+		return this.bindingPairs.map( function( pair ) {
+
+			if( ! pair ) {
+				return undefined;
+			}
+
+			var attrA = pair.jsGraphShape.getAttribute( self.options.jsGraphShape.attributeEquivalents );
+			var attrB = pair.targetB.getAttribute( self.options.targetB.attributeEquivalents );
+
+			return [ attrA, attrB ];
+		} );
+	}
+
+
+	Constructor.prototype.findElement = function( target, selector ) {
+
+		return $( this.options[ target ].dom ).find( "[" + this.options[ target ].attributeEquivalents + "=\"" + selector + "\"]");	
+	};
+
+
+	Constructor.prototype.setAssignment = function( pairs ) {
+
+		var self = this;
+		self.bindingPairs = [];
+
+		pairs.forEach( function( pair ) {
+
+			self.bindingPairs.push( { jsGraphShape: self.findElement( 'jsGraphShape', pair[ 0 ] ), targetB: self.findElement( 'targetB', pair[ 1 ] ) } );
+
+		} );
+	}
+
+
+	var Assignment = function( $ ) {
+		return Constructor;
+	};
+
+	if( typeof define === "function" && define.amd ) {
+		define( 'src/assignment',[ 'jquery' ], function( $ ) {
+			return Assignment( $ );
+		});
+	} else if( window ) {
+
+		if( ! window.jQuery ) {
+			throw "jQuery has not been loaded. Abort assignment initialization."
+			return;
+		}
+
+		window.Assignment = Assignment( window.jQuery );
+	}
+}));
+
+var SD={
+	  /**
+	  * @function create(spectra)
+	  * This function define a spectraData from the x and y vectors. If the spectraData is null it will return a new instance of
+	  * SpectraData
+	  * @param	spectra:+Object
+	  * @returns	+SD
+	  */
+	 create: function(spectra){
+		 return new ESD(spectra);
+	 }
+};
+
+var HeteroNuclearPeakOptimizer={
+	toleranceX : 0.025,
+	toleranceY : 0.5,
+	clean: function(peaks, threshold){
+		var max = Number.NEGATIVE_INFINITY;
+		var i,peak;
+		//double min = Double.MAX_VALUE;
+		for(i=peaks.length-1;i>=0;i--){
+			if(Math.abs(peaks[i].z)>max)
+				max=Math.abs(peaks[i].z);
+		}
+		max*=threshold;
+		for(i=peaks.length-1;i>=0;i--){
+			if(Math.abs(peaks[i].z)<max)
+				peaks.splice(i,1);
+		}
+		return peaks;
+	}
+}
+
+var HomoNuclearPeakOptimizer={
+	diagonalError:0.05,
+	tolerance:0.05,
+	DEBUG:false,
+	
+	enhanceSymmetry: function(signals){
+		
+		var properties = this.initializeProperties(signals);
+		var output = signals;
+
+		if(this.DEBUG)
+			console.log("Before optimization size: "+output.size());
+		
+		//First step of the optimization: Symmetry validation
+		var i,hits,index;
+		var signal;
+		for(i=output.length-1;i>=0;i--){
+			signal = output[i];
+			if(signal.peaks.length>1)
+				properties[i][1]++;
+			if(properties[i][0]==1){
+				index = this.exist(output, properties, signal,-1,true);
+				if(index>=0){
+					properties[i][1]+=2;
+					properties[index][1]+=2;
+				}
+			}
+		}
+		//Second step of the optimization: Diagonal image existence
+		for(i=output.length-1;i>=0;i--){
+			signal = output[i];
+			if(properties[i][0]==0){
+				hits = this.checkCrossPeaks(output, properties, signal, true);
+				properties[i][1]+=hits;
+				//checkCrossPeaks(output, properties, signal, false);
+			}
+		}
+		
+		//Now, each peak have a score between 0 and 4, we can complete the patterns which
+		//contains peaks with high scores, and finally, we can remove peaks with scores 0 and 1
+		var count = 0;
+		for(i=output.length-1;i>=0;i--){
+			if(properties[i][0]!=0&&properties[i][1]>2){
+				count++;
+				count+=this.completeMissingIfNeeded(output,properties,output[i],properties[i]);
+			}
+			if(properties[i][1]>=2&&properties[i][0]==0)
+				count++;
+		}
+		
+		if(this.DEBUG)
+			console.log("After optimization size: "+count);
+		var  toReturn = new Array(count);
+		count--;
+		for(i=output.length-1;i>=0;i--){
+			if(properties[i][0]!=0&&properties[i][1]>2
+					||properties[i][0]==0&&properties[i][1]>1){
+				toReturn[count--]=output[i];
+			}
+			else{
+				console.log("Removed "+i+" "+output[i].peaks.length);
+			}
+			//if(properties.get(i)[1]>=2)
+			//	toReturn[count--]=output.get(i);
+		}
+		return toReturn;
+	},
+	
+	completeMissingIfNeeded: function(output, properties, thisSignal, thisProp) {
+		//Check for symmetry
+		var index = this.exist(output, properties, thisSignal,-thisProp[0],true);
+		var addedPeaks=0;
+		if(index<0){//If this signal have no a symmetry image, we have to include it
+			var newSignal = {nucleusX:thisSignal.nucleusX,nucleusY:thisSignal.nucleusY};
+			newSignal.resolutionX=thisSignal.resolutionX;
+			newSignal.resolutionY=thisSignal.resolutionY;
+			newSignal.shiftX=thisSignal.shiftY;
+			newSignal.shiftY=thisSignal.shiftX;
+			newSignal.peaks = [{x:thisSignal.shiftY,y:thisSignal.shiftX,z:1}];
+			output.push(newSignal);
+			var tmpProp = [-thisProp[0],thisProp[1]];
+			properties.push(tmpProp);
+			addedPeaks++;
+		}
+		//Check for diagonal peaks
+		var j=0;
+		var diagX=false, diagY=false;
+		var signal;
+		for(j=output.length-1;j>=0;j--){
+			signal = output[j];
+			if(properties[j][0]==0){
+				if(Math.abs(signal.shiftX-thisSignal.shiftX)<this.diagonalError)
+					diagX=true;
+				if(Math.abs(signal.shiftY-thisSignal.shiftY)<this.diagonalError)
+					diagY=true;
+			}
+		}
+		if(diagX==false){
+			var newSignal = {nucleusX:thisSignal.nucleusX,nucleusY:thisSignal.nucleusY};
+			newSignal.resolutionX=thisSignal.resolutionX;
+			newSignal.resolutionY=thisSignal.resolutionY;
+			newSignal.shiftX=thisSignal.shiftX;
+			newSignal.shiftY=thisSignal.shiftX;
+			newSignal.peaks = [{x:thisSignal.shiftX,y:thisSignal.shiftX,z:1}];
+			output.push(newSignal);
+			var tmpProp = [0,thisProp[1]];
+			properties.push(tmpProp);
+			addedPeaks++;
+		}
+		if(diagY==false){
+			var newSignal = {nucleusX:thisSignal.nucleusX,nucleusY:thisSignal.nucleusY};
+			newSignal.resolutionX=thisSignal.resolutionX;
+			newSignal.resolutionY=thisSignal.resolutionY;
+			newSignal.shiftX=thisSignal.shiftY;
+			newSignal.shiftY=thisSignal.shiftY;
+			newSignal.peaks = [{x:thisSignal.shiftY,y:thisSignal.shiftY,z:1}];
+			output.push(newSignal);
+			var tmpProp = [0,thisProp[1]];
+			properties.push(tmpProp);
+			addedPeaks++;
+		}
+		return addedPeaks;
+		
+	},
+	
+	//Check for any diagonal peak that match this cross peak
+	checkCrossPeaks: function(output, properties, signal, updateProperties) {
+		var hits = 0, i=0, shift=signal.shiftX*4;
+		var crossPeaksX = [],crossPeaksY = [];
+		var cross,i;
+		for(i=output.length-1;i>=0;i--){
+			cross = output[i];
+			if(properties[i][0]!=0){
+				if(Math.abs(cross.shiftX-signal.shiftX)<this.diagonalError){
+					hits++;
+					if(updateProperties)
+						properties[i][1]++;
+					crossPeaksX.push(i);
+					shift+=cross.shiftX;
+				}
+				else{
+					if(Math.abs(cross.shiftY-signal.shiftY)<this.diagonalError){
+						hits++;
+						if(updateProperties)
+							properties[i][1]++;
+						crossPeaksY.push(i);
+						shift+=cross.shiftY;
+					}
+				}
+			}
+		}
+		//Update found crossPeaks and diagonal peak
+		shift/=(crossPeaksX.length+crossPeaksY.length+4);
+		if(crossPeaksX.length>0){
+			for(var i=crossPeaksX.length-1;i>=0;i--){
+				output[crossPeaksX[i]].shiftX=shift;
+			}
+		}
+		if(crossPeaksY.length>0){
+			for(var i=crossPeaksY.length-1;i>=0;i--){
+				output[crossPeaksY[i]].shiftY=shift;
+			}
+		}
+		signal.shiftX=shift;
+		signal.shiftY=shift;
+		return hits;
+	},
+
+	exist: function(output, properties, signal, type, symmetricSearch) {
+		for(var i=output.length-1;i>=0;i--){
+			if(properties[i][0]==type){
+				if(this.distanceTo(signal, output[i], symmetricSearch)<this.tolerance){
+					if(!symmetricSearch){
+						var shiftX=(output[i].shiftX+signal.shiftX)/2.0;
+						var shiftY=(output[i].shiftY+signal.shiftY)/2.0;
+						output[i].shiftX=shiftX;
+						output[i].shiftY=shiftY;
+						signal.shiftX=shiftX;
+						signal.shiftY=shiftY;
+					}
+					else{
+						var shiftX=signal.shiftX;
+						var shiftY=output[i].shiftX;
+						output[i].shiftY=shiftX;
+						signal.shiftY=shiftY;
+					}
+					return i;
+				}
+			}
+		}
+		return -1;
+	},
+	/**
+	 * We try to determine the position of each signal within the spectrum matrix.
+	 * Peaks could be of 3 types: upper diagonal, diagonal or under diagonal 1,0,-1
+	 * respectively.
+	 * @param Signals
+	 * @return A matrix containing the properties of each signal
+	 */
+	initializeProperties: function(signals){
+		var signalsProperties = new Array(signals.length);
+		for(var i=signals.length-1;i>=0;i--){
+			signalsProperties[i]=[0,0];
+			//We check if it is a diagonal peak
+			if(Math.abs(signals[i].shiftX-signals[i].shiftY)<=this.diagonalError){
+				signalsProperties[i][1]=1;
+				//We adjust the x and y value to be symmetric.
+				//In general chemical shift in the direct dimension is better than in the other one,
+				//so, we believe more to the shiftX than to the shiftY.
+				var shift = (signals[i].shiftX*2+signals[i].shiftY)/3.0;
+				signals[i].shiftX=shift;
+				signals[i].shiftY=shift;
+			}
+			else{
+				if(signals[i].shiftX-signals[i].shiftY>0)
+					signalsProperties[i][0]=1;
+				else
+					signalsProperties[i][0]=-1;
+			}
+		}
+		return signalsProperties;
+	},
+	
+	/**
+	 * This function calculates the distance between 2 nmr signals . If toImage is true, 
+	 * it will interchange x by y in the distance calculation for the second signal.
+	 */
+	distanceTo: function(a, b, toImage){
+		if(!toImage){
+			return Math.sqrt(Math.pow(a.shiftX-b.shiftX, 2)
+					+Math.pow(a.shiftY-b.shiftY, 2));
+		}
+		else{
+			return Math.sqrt(Math.pow(a.shiftX-b.shiftY, 2)
+					+Math.pow(a.shiftY-b.shiftX, 2));
+		}
+	}
+};
+
+var SimpleClustering={
+
+	/*This function returns the cluster list given a connectivity matrix.
+	*To improve the performance, the connectivity(square and symmetric) matrix 
+	*is given as a single vector containing  the upper diagonal of the matrix
+	*Note: This algorithm is O(n*n) complexity. I wonder if there is something better. 
+	*acastillo
+	*/
+	fullClusterGenerator:function(conn){
+		var nRows = Math.sqrt(conn.length*2+0.25)-0.5;
+		//console.log("nRows: "+nRows+" - "+conn.length);
+		var clusterList = [];
+		var available = new Array(nRows);
+		var remaining = nRows;
+		var cluster = [];
+		//Mark all the elements as available
+		for(var i=nRows-1;i>=0;i--){
+			available[i]=1;
+		}
+		var nextAv=-1,i;
+		var toInclude = [];
+		while(remaining>0){
+			if(toInclude.length==0){
+				//If there is no more elements to include, start a new cluster
+				cluster = new Array(nRows);
+				for(i=nRows-1;i>=0;i--)
+					cluster[i]=0;
+				clusterList.push(cluster);
+		    	for(nextAv = nRows-1;available[nextAv]==0;nextAv--){};
+		    }
+		    else{
+		    	nextAv=toInclude.splice(0,1);
+		    }
+		    //console.log("row: "+nextAv);
+		    cluster[nextAv]=1;
+		    available[nextAv]=0;
+		    remaining--;
+		    //Copy the next available row
+		    var row = new Array(nRows);
+			for(i=nRows-1;i>=0;i--){
+				var c=Math.max(nextAv,i);
+				var r=Math.min(nextAv,i);
+				//The element in the conn matrix
+				//console.log("index: "+r*(2*nRows-r-1)/2+c)
+				row[i]=conn[r*(2*nRows-r-1)/2+c];
+				//console.log("col: "+i+":"+row[i]);
+				//There is new elements to include in this row?
+				//Then, include it to the current cluster
+				if(row[i]==1&&available[i]==1&&cluster[i]==0){
+					toInclude.push(i);
+					cluster[i]=1;
+				}
+			}
+		}
+		return clusterList;
+	}
+}
+
+var MathUtils={
+	/**
+	 * Returns the minimum and maximum values of the given vector
+	 * @param data
+	 * @return double array containing [min,max]
+	 */
+	getMinMax: function( data) {
+		var result = [Number.POSITIVE_INFINITY,Number.NEGATIVE_INFINITY];
+
+		for (var i = data.length-1; i >=0 ; i--) {
+			if (data[i] < result[0])
+				result[0] = data[i];
+			if (data[i] > result[1])
+				result[1] = data[i];
+		}
+		return result;
+	}
+};
+
+var FFTUtils = {
+
+/**
+	 * Calculates the inverse of a 2D Fourier transform
+	 * 
+	 * @param ft
+	 * @param ftRows
+	 * @param ftCols
+	 * @return
+	 */
+	ifft2DArray: function(ft, ftRows, ftCols) {
+		var tempTransform = new Array(ftRows * ftCols);
+		var nRows = ftRows / 2;
+		var nCols = (ftCols - 1) * 2;
+		// reverse transform columns
+		FFT.init(nRows);
+		var tmpCols = {re:new Array(nRows),im:new Array(nRows)};
+		for (var iCol = 0; iCol < ftCols; iCol++) {
+			for (var iRow = nRows-1; iRow >=0; iRow--) {
+				tmpCols.re[iRow] = ft[(iRow * 2) * ftCols + iCol];
+				tmpCols.im[iRow] = ft[(iRow * 2 + 1) * ftCols + iCol];
+			}
+			//Unnormalized inverse transform
+			FFT.bt(tmpCols.re, tmpCols.im);
+			for (var iRow = nRows-1; iRow >=0; iRow--) {
+				tempTransform[(iRow * 2) * ftCols + iCol] = tmpCols.re[iRow];
+				tempTransform[(iRow * 2 + 1) * ftCols + iCol] = tmpCols.im[iRow];
+			}
+		}
+
+		// reverse row transform
+		var finalTransform = new Array(nRows * nCols);
+		FFT.init(nCols);
+		var tmpRows = {re:new Array(nCols),im:new Array(nCols)};
+		var scale = nCols * nRows;
+		for (var iRow = 0; iRow < ftRows; iRow += 2) {
+			tmpRows.re[0] = tempTransform[iRow * ftCols];
+			tmpRows.im[0] = tempTransform[(iRow + 1) * ftCols];
+			for (var iCol = 1; iCol < ftCols; iCol++) {
+				tmpRows.re[iCol] = tempTransform[iRow * ftCols + iCol];
+				tmpRows.im[iCol] = tempTransform[(iRow + 1) * ftCols + iCol];
+				tmpRows.re[nCols - iCol] = tempTransform[iRow * ftCols + iCol];
+				tmpRows.im[nCols - iCol] = -tempTransform[(iRow + 1) * ftCols + iCol];
+			}
+			//Unnormalized inverse transform
+			FFT.bt(tmpRows.re, tmpRows.im);
+			
+			var indexB = (iRow / 2) * nCols;
+			for (var iCol = nCols-1; iCol >=0; iCol--) {
+				finalTransform[indexB + iCol] = tmpRows.re[iCol]/ scale;
+			}
+		}
+		return finalTransform;
+	},
+    /**
+	 * Calculates the fourier transform of a matrix of size (nRows,nCols) It is
+	 * assumed that both nRows and nCols are a power of two
+	 * 
+	 * On exit the matrix has dimensions (nRows * 2, nCols / 2 + 1) where the
+	 * even rows contain the real part and the odd rows the imaginary part of the
+	 * transform
+	 * @param data
+	 * @param nRows
+	 * @param nCols
+	 * @return
+	 */
+    fft2DArray:function(data, nRows, nCols){
+    	var ftCols = (nCols / 2 + 1);
+		var ftRows = nRows * 2;
+		var tempTransform = new Array(ftRows * ftCols);
+		FFT.init(nCols);
+		// transform rows
+		var tmpRows = {re:new Array(nCols),im:new Array(nCols)};
+		var row1 = {re:new Array(nCols),im:new Array(nCols)}
+		var row2 = {re:new Array(nCols),im:new Array(nCols)}
+		var index,iRow0, iRow1, iRow2, iRow3;
+		for (var iRow = 0; iRow < nRows / 2; iRow++) {
+		    index = (iRow * 2) * nCols;
+			tmpRows.re = data.slice(index, index+nCols);
+			
+			index = (iRow * 2 + 1) * nCols;
+			tmpRows.im = data.slice(index,index+nCols);
+			
+			FFT.fft1d(tmpRows.re, tmpRows.im);
+			
+			/*if(iRow==0){
+				console.log(tmpRows.re);
+				console.log(tmpRows.im);
+			}*/
+			this.reconstructTwoRealFFT(tmpRows, row1, row2);
+			//Now lets put back the result into the output array
+			iRow0=(iRow * 4) * ftCols;
+			iRow1=(iRow * 4+1) * ftCols;
+			iRow2=(iRow * 4+2) * ftCols;
+			iRow3=(iRow * 4+3) * ftCols;
+			for(var k=ftCols-1;k>=0;k--){
+				tempTransform[iRow0+k]=row1.re[k];
+				tempTransform[iRow1+k]=row1.im[k];
+				tempTransform[iRow2+k]=row2.re[k];
+				tempTransform[iRow3+k]=row2.im[k];
+			}
+		}
+		
+		//console.log(tempTransform);
+		row1 = null;
+		row2 = null;
+		// transform columns
+		var finalTransform = new Array(ftRows * ftCols);
+		FFT.init(nRows);
+		var tmpCols = {re:new Array(nRows),im:new Array(nRows)};
+		for (var iCol = ftCols-1; iCol >= 0; iCol--) {
+			for (var iRow = nRows-1; iRow >=0; iRow--) {
+				tmpCols.re[iRow] = tempTransform[(iRow * 2) * ftCols + iCol];
+				tmpCols.im[iRow] = tempTransform[(iRow * 2 + 1) * ftCols + iCol];
+			}
+			FFT.fft1d(tmpCols.re, tmpCols.im);
+			for (var iRow = nRows-1; iRow >=0; iRow--) {
+				finalTransform[(iRow * 2) * ftCols + iCol] = tmpCols.re[iRow];
+				finalTransform[(iRow * 2 + 1) * ftCols + iCol] = tmpCols.im[iRow];
+			}
+		}
+		
+		//console.log(finalTransform);
+		return finalTransform;
+    
+    },
+     /**
+	 * 
+	 * @param fourierTransform
+	 * @param realTransform1
+	 * @param realTransform2
+	 * 
+	 * Reconstructs the individual Fourier transforms of two simultaneously
+	 * transformed series. Based on the Symmetry relationships (the asterisk
+	 * denotes the complex conjugate)
+	 * 
+	 * F_{N-n} = F_n^{*} for a purely real f transformed to F
+	 * 
+	 * G_{N-n} = G_n^{*} for a purely imaginary g transformed to G
+	 * 
+	 */
+	reconstructTwoRealFFT:function(fourierTransform, realTransform1, realTransform2) {
+		var length = fourierTransform.re.length;
+		// allocate storage
+		/*realTransform1.re = new Array(length);
+		realTransform1.im = new Array(length);
+		realTransform2.re = new Array(length);
+		realTransform2.im = new Array(length);*/
+
+		// the components n=0 are trivial
+		realTransform1.re[0] = fourierTransform.re[0];
+		realTransform1.im[0] = 0.0;
+		realTransform2.re[0] = fourierTransform.im[0];
+		realTransform2.im[0] = 0.0;
+		var rm, rp, im, ip, j;
+		for (var i = length / 2; i >0 ; i--) {
+			j = length - i;
+			rm = 0.5 * (fourierTransform.re[i] - fourierTransform.re[j]);
+			rp = 0.5 * (fourierTransform.re[i] + fourierTransform.re[j]);
+			im = 0.5 * (fourierTransform.im[i] - fourierTransform.im[j]);
+			ip = 0.5 * (fourierTransform.im[i] + fourierTransform.im[j]);
+			realTransform1.re[i] = rp;
+			realTransform1.im[i] = im;
+			realTransform1.re[j] = rp;
+			realTransform1.im[j] = -im;
+			realTransform2.re[i] = ip;
+			realTransform2.im[i] = -rm;
+			realTransform2.re[j] = ip;
+			realTransform2.im[j] = rm;
+		}
+	},
+	
+	/**
+	 * In place version of convolute 2D
+	 * 
+	 * @param ftSignal
+	 * @param ftFilter
+	 * @param ftRows
+	 * @param ftCols
+	 * @return
+	 */
+	convolute2DI:function(ftSignal, ftFilter, ftRows, ftCols) {
+		var re, im;
+		for (var iRow = 0; iRow < ftRows / 2; iRow++) {
+			for (var iCol = 0; iCol < ftCols; iCol++) {
+				// 
+				re = ftSignal[(iRow * 2) * ftCols + iCol]
+						* ftFilter[(iRow * 2) * ftCols + iCol]
+						- ftSignal[(iRow * 2 + 1) * ftCols + iCol]
+						* ftFilter[(iRow * 2 + 1) * ftCols + iCol];
+				im = ftSignal[(iRow * 2) * ftCols + iCol]
+						* ftFilter[(iRow * 2 + 1) * ftCols + iCol]
+						+ ftSignal[(iRow * 2 + 1) * ftCols + iCol]
+						* ftFilter[(iRow * 2) * ftCols + iCol];
+				// 
+				ftSignal[(iRow * 2) * ftCols + iCol] = re;
+				ftSignal[(iRow * 2 + 1) * ftCols + iCol] = im;
+			}
+		}
+	}	
+};
+
+var PeakFinders2D = {
+    DEBUG:false,
+    smallFilter: [ 
+			[ 0, 0, 1, 2, 2, 2, 1, 0, 0 ],
+			[ 0, 1, 4, 7, 7, 7, 4, 1, 0 ], 
+			[ 1, 4, 5, 3, 0, 3, 5, 4, 1 ],
+			[ 2, 7, 3, -12, -23, -12, 3, 7, 2 ],
+			[ 2, 7, 0, -23, -40, -23, 0, 7, 2 ],
+			[ 2, 7, 3, -12, -23, -12, 3, 7, 2 ],
+			[ 1, 4, 5, 3, 0, 3, 5, 4, 1 ], 
+			[ 0, 1, 3, 7, 7, 7, 3, 1, 0 ],
+			[ 0, 0, 1, 2, 2, 2, 1, 0, 0 ]],
+
+	//How noisy is the spectrum depending on the kind of experiment.
+	getLoGnStdDevNMR: function(spectraData) {
+		if (spectraData.isHomoNuclear())
+			return 1.5
+		else
+			return 3;
+	},
+	
+	_findPeaks2DLoG: function(spectraData, thresholdFactor){
+		if(thresholdFactor==0)
+			thresholdFactor=1;
+		if(thresholdFactor<0)
+			thresholdFactor=-thresholdFactor;
+		var nbPoints = spectraData.getNbPoints();
+		var nbSubSpectra = spectraData.getNbSubSpectra();
+		var data = new Array(nbPoints * nbSubSpectra);
+		//var data = new Array(nbPoints * nbSubSpectra/2);
+		
+		var isHomonuclear = spectraData.isHomoNuclear();
+		
+		//var sum = new Array(nbPoints);
+		
+		for (var iSubSpectra = 0; iSubSpectra < nbSubSpectra; iSubSpectra++) {
+			var spectrum = spectraData.getSpectraData(iSubSpectra);
+			for (var iCol = 0; iCol < nbPoints; iCol++) {
+				if(isHomonuclear){
+					data[iSubSpectra * nbPoints + iCol] =(spectrum[iCol*2+1]>0?spectrum[iCol*2+1]:0);
+				}
+				else{
+					data[iSubSpectra * nbPoints + iCol] =Math.abs(spectrum[iCol*2+1]);
+				}
+			}
+		}
+		
+		var nStdDev = this.getLoGnStdDevNMR(spectraData);
+		if(isHomonuclear){
+			var convolutedSpectrum = this.convoluteWithLoG(data,nbSubSpectra, nbPoints);
+			var peaksMC1 = this.findPeaks2DLoG(data, convolutedSpectrum, nbSubSpectra, nbPoints, nStdDev*thresholdFactor);//)1.5);
+			var peaksMax1 = this.findPeaks2DMax(data, convolutedSpectrum, nbSubSpectra, nbPoints, (nStdDev+0.5)*thresholdFactor);//2.0);
+			for(var i=0;i<peaksMC1.length;i++)
+				peaksMax1.push(peaksMC1[i]);
+			return HomoNuclearPeakOptimizer.enhanceSymmetry(this.createSignals2D(peaksMax1,spectraData,24));
+			
+		}
+		else{
+			var convolutedSpectrum = this.convoluteWithLoG(data, nbSubSpectra, nbPoints);
+			var peaksMC1 = this.findPeaks2DLoG(data, convolutedSpectrum, nbSubSpectra, nbPoints, nStdDev*thresholdFactor);
+			//Peak2D[] peaksMC1 = PeakFinders2D.findPeaks2DMax(data, nbSubSpectra, nbPoints, (nStdDev+0.5)*thresholdFactor);
+			//Remove peaks with less than 3% of the intensity of the highest peak	
+			return this.createSignals2D(HeteroNuclearPeakOptimizer.clean(peaksMC1, 0.05), spectraData,24);
+		}
+		
+	},
+	/**
+	Calculates the 1st derivative of the 2D matrix, using the LoG kernel approximation
+	*/
+	convoluteWithLoG:function(inputSpectrum, nRows, nCols){
+		var ftSpectrum = new Array(nCols * nRows);
+		for (var i = nRows * nCols-1; i >=0; i--){
+			ftSpectrum[i] = inputSpectrum[i];
+		}
+		
+		ftSpectrum = FFTUtils.fft2DArray(ftSpectrum, nRows, nCols);
+		
+		var dim = this.smallFilter.length;
+		var ftFilterData = new Array(nCols * nRows);
+		for(var i=nCols * nRows-1;i>=0;i--){
+			ftFilterData[i]=0;
+		}
+		
+		var iRow, iCol;
+		var shift = (dim - 1) / 2;
+		//console.log(dim);
+		for (var ir = 0; ir < dim; ir++) {
+			iRow = (ir - shift + nRows) % nRows;
+			for (var ic = 0; ic < dim; ic++) {
+				iCol = (ic - shift + nCols) % nCols;
+				ftFilterData[iRow * nCols + iCol] = this.smallFilter[ir][ic];
+			}
+		}
+		
+		ftFilterData = FFTUtils.fft2DArray(ftFilterData, nRows, nCols);
+
+		var ftRows = nRows * 2;
+		var ftCols = nCols / 2 + 1;
+		FFTUtils.convolute2DI(ftSpectrum, ftFilterData, ftRows, ftCols);
+		
+		return  FFTUtils.ifft2DArray(ftSpectrum, ftRows, ftCols);	
+	},
+	/**
+		Detects all the 2D-peaks in the given spectrum based on center of mass logic. 
+	*/
+	findPeaks2DLoG:function(inputSpectrum, convolutedSpectrum, nRows, nCols, nStdDev) {
+		var threshold = 0;
+		for(var i=nCols*nRows-2;i>=0;i--)
+			threshold+=Math.pow(convolutedSpectrum[i]-convolutedSpectrum[i+1],2);
+		threshold=-Math.sqrt(threshold);
+		threshold*=nStdDev/nRows;
+		
+		var bitmask = new Array(nCols * nRows); 
+		for(var i=nCols * nRows-1;i>=0;i--){
+			bitmask[i]=0;
+		}
+		var nbDetectedPoints = 0;
+		var lasti=-1;
+		for (var i = convolutedSpectrum.length-1; i >=0 ; i--) {
+			if (convolutedSpectrum[i] < threshold) {
+				bitmask[i] = 1;
+				nbDetectedPoints++;
+			}
+		}
+		var iStart = 0;
+		//int ranges = 0;
+		var peakList = [];
+		
+		while (nbDetectedPoints != 0) {
+			for (iStart; iStart < bitmask.length && bitmask[iStart]==0; iStart++){};
+			//
+			if (iStart == bitmask.length)
+				break;
+			
+			nbDetectedPoints -= this.extractArea(inputSpectrum, convolutedSpectrum,
+					bitmask, iStart, nRows, nCols, peakList, threshold);
+		}
+		
+		if (peakList.length > 0&&this.DEBUG) {
+			console.log("No peak found");
+		}
+		return peakList;
+	},
+	/**
+	Detects all the 2D-peaks in the given spectrum based on the Max logic. 
+	*/
+	findPeaks2DMax:function(inputSpectrum, cs, nRows, nCols, nStdDev) {
+		var threshold = 0;
+		for(var i=nCols*nRows-2;i>=0;i--)
+			threshold+=Math.pow(cs[i]-cs[i+1],2);
+		threshold=-Math.sqrt(threshold);
+		threshold*=nStdDev/nRows;
+		
+		var rowI,colI;
+		var peakListMax = [];
+		var tmpIndex = 0;
+		for (var i = 0; i < cs.length; i++) {
+			if (cs[i] < threshold) {
+				//It is a peak?
+				rowI=Math.floor(i/nCols);
+				colI=i%nCols;
+				//Verifies if this point is a peak;
+				if(rowI>0&&rowI+1<nRows&&colI+1<nCols&&colI>0){
+					//It is the minimum in the same row
+					if(cs[i]<cs[i+1]&&cs[i]<cs[i-1]){
+						//It is the minimum in the previous row 
+						tmpIndex=(rowI-1)*nCols+colI;
+						if(cs[i]<cs[tmpIndex-1]&&cs[i]<cs[tmpIndex]&&cs[i]<cs[tmpIndex+1]){
+							//It is the minimum in the next row 
+							tmpIndex=(rowI+1)*nCols+colI;
+							if(cs[i]<cs[tmpIndex-1]&&cs[i]<cs[tmpIndex]&&cs[i]<cs[tmpIndex+1]){
+								peakListMax.push({x:colI,y:rowI,z:inputSpectrum[i]});
+							}
+						}
+					}
+				}
+			}
+		}
+		return peakListMax;
+	},
+	/*
+		This function detects the peaks
+	*/
+	extractArea:function(spectrum, convolutedSpectrum, bitmask, iStart,
+			nRows, nCols, peakList, threshold) {
+		var iRow = Math.floor(iStart / nCols);
+		var iCol = iStart % nCols;
+		var peakPoints =[];
+		//console.log(iStart+" "+iRow+" "+iCol);
+		// scanBitmask(bitmask, convolutedSpectrum, nRows, nCols, iRow, iCol,
+		// peakPoints);
+		this.scanBitmask(bitmask, nRows, nCols, iRow, iCol, peakPoints);
+		//console.log("extractArea.lng "+peakPoints.length);
+		var x = new Array(peakPoints.length);
+		var y = new Array(peakPoints.length);
+		var z = new Array(peakPoints.length);
+		var nValues = peakPoints.length;
+		var xAverage = 0.0;
+		var yAverage = 0.0;
+		var zSum = 0.0;
+		if (nValues >= 9) {
+			if (this.DEBUG)
+				console.log("nValues=" + nValues);
+			var maxValue = Number.NEGATIVE_INFINITY;
+			var maxIndex = -1;
+			for (var i = 0; i < nValues; i++) {
+				var pt = (peakPoints.splice(0,1))[0];
+				x[i] = pt[0];
+				y[i] = pt[1];
+				z[i] = spectrum[pt[1] * nCols + pt[0]];
+				xAverage += x[i] * z[i];
+				yAverage += y[i] * z[i];
+				zSum += z[i];
+				if (z[i] > maxValue) {
+					maxValue = z[i];
+					maxIndex = i;
+				}
+			}
+			if (maxIndex != -1) {
+				xAverage /= zSum;
+				yAverage /= zSum;
+				var newPeak = {x:xAverage, y:yAverage, z:zSum};
+				var minmax;
+				minmax = MathUtils.getMinMax(x);
+				newPeak.minX=minmax[0];
+				newPeak.maxX=minmax[1];
+				minmax = MathUtils.getMinMax(y);
+				newPeak.minY=minmax[0];
+				newPeak.maxY=minmax[1];
+				peakList.push(newPeak);
+			}
+		}
+		return nValues;
+	},
+	/*
+		Return all the peaks(x,y points) that composes a signal.
+	*/
+	scanBitmask:function(bitmask, nRows, nCols, iRow, iCol, peakPoints) {
+		//console.log(nRows+" "+iRow+" "+nCols+" "+iCol);
+		if (iRow < 0 || iCol < 0 || iCol == nCols || iRow == nRows)
+			return;
+		if (bitmask[iRow * nCols + iCol]) {
+			bitmask[iRow * nCols + iCol] = 0;
+			peakPoints.push([iCol, iRow]);
+			this.scanBitmask(bitmask, nRows, nCols, iRow + 1, iCol, peakPoints);
+			this.scanBitmask(bitmask, nRows, nCols, iRow - 1, iCol, peakPoints);
+			this.scanBitmask(bitmask, nRows, nCols, iRow, iCol + 1, peakPoints);
+			this.scanBitmask(bitmask, nRows, nCols, iRow, iCol - 1, peakPoints);
+		}
+	},
+	/**
+	This function converts a set of 2D-peaks in 2D-signals. Each signal could be composed 
+	of many 2D-peaks, and it has some additional information related to the NMR spectrum.
+	*/
+	createSignals2D:function(peaks, spectraData, tolerance){
+		//console.log(peaks.length);
+		var signals=[];
+		var nbSubSpectra = spectraData.getNbSubSpectra();
+		
+		var bf1=spectraData.observeFrequencyX();
+		var bf2=spectraData.observeFrequencyY();
+		
+		var firstY = spectraData.getFirstY();
+		var lastY = spectraData.getLastY();
+		var dy = spectraData.getDeltaY();
+		
+		//spectraData.setActiveElement(0);
+		var noValid=0;
+		for (var i = peaks.length-1; i >=0 ; i--) {
+		    //console.log(peaks[i].x+" "+spectraData.arrayPointToUnits(peaks[i].x));
+		    //console.log(peaks[i].y+" "+(firstY + dy * (peaks[i].y)));
+			peaks[i].x=(spectraData.arrayPointToUnits(peaks[i].x));
+			peaks[i].y=(firstY + dy * (peaks[i].y));
+			//Still having problems to correctly detect peaks on those areas. So I'm removing everything there.
+			if(peaks[i].y<-1||peaks[i].y>=210){
+				peaks.splice(i,1);
+			}
+		}
+		//The connectivity matrix is an square and symmetric matrix, so we'll only store the upper diagonal in an
+		//array like form 
+		var connectivity = [];
+		var tmp=0;
+		tolerance*=tolerance;
+		for (var i = 0; i < peaks.length; i++) {
+			for (var j = i; j < peaks.length; j++) {
+				tmp=Math.pow((peaks[i].x-peaks[j].x)*bf1,2)+Math.pow((peaks[i].y-peaks[j].y)*bf2,2);
+				//Console.log(peaks[i].getX()+" "+peaks[j].getX()+" "+tmp);
+				if(tmp<tolerance){//30*30Hz We cannot distinguish peaks with less than 20 Hz of separation
+					connectivity.push(1);
+				}
+				else{
+					connectivity.push(0);
+				}
+			}
+		}
+
+		var clusters = SimpleClustering.fullClusterGenerator(connectivity);
+		
+		var signals = [];
+		if (peaks != null) {
+			var xValue, yValue;
+			for (var iCluster = 0; iCluster < clusters.length; iCluster++) {
+				signal={nucleusX:spectraData.getNucleus(1),nucleusY:spectraData.getNucleus(2)};
+				signal.resolutionX=( spectraData.getLastX()-spectraData.getFirstX()) / spectraData.getNbPoints();
+				signal.resolutionY=dy;
+				var peaks2D = [];
+				signal.shiftX = 0;
+				signal.shiftY = 0;
+				var sumZ = 0;
+				for(var jPeak = clusters[iCluster].length-1;jPeak>=0;jPeak--){
+					if(clusters[iCluster][jPeak]==1){
+						peaks2D.push(peaks[jPeak]);
+						signal.shiftX+=peaks[jPeak].x*peaks[jPeak].z;
+						signal.shiftY+=peaks[jPeak].y*peaks[jPeak].z;
+						sumZ+=peaks[jPeak].z;
+					}
+				}
+				signal.shiftX/=sumZ;
+				signal.shiftY/=sumZ;
+				signal.peaks = peaks2D;
+				signals.push(signal);
+			}
+		}
+		//console.log(signals);	
+		return signals;
+	}
+};
+
+/**
+ * @object SD.prototype
+ * Prototype of ESD objects
+ */
+var ESD = function (newESD) {
+	this.ESD2=newESD;
+	/**
+	* @function nmrPeakDetection2D(options)
+	* This function process the given spectraData and tries to determine the NMR signals. Returns an NMRSignal2D array containing all the detected 2D-NMR Signals
+	* @param	options:+Object			Object containing the options
+	* @option	thresholdFactor:number	A factor to scale the automatically determined noise threshold.
+	* @returns	+Object	set of NMRSignal2D
+	*/
+	this.nmrPeakDetection2D=function(options){
+	    options = options||{};
+	    if(!options.thresholdFactor)
+			options.thresholdFactor=1;
+		return PeakFinders2D._findPeaks2DLoG(this, options.thresholdFactor);
+	},
+	
+	this.getNbPoints=function(){
+		return this.getSpectraData(0).length/2;
+	},
+	
+	this.getSpectraData=function(i){
+		return this.ESD2.spectra[i].data[0];
+	},
+	
+	this.getYData=function(i){
+		var y = new Array(this.getNbPoints());
+		var tmp = this.getSpectraData(i);
+		for(var i=this.getNbPoints()-1;i>=0;i--){
+			y[i]=tmp[i*2+1];
+		}
+		return y;
+	}
+	this.getNbSubSpectra=function(){
+		return this.ESD2.spectra.length;
+	},
+	
+	this.isHomoNuclear=function(){
+		return this.ESD2.xType==this.ESD2.yType;
+	},
+	//Returns the observe frequency in the direct dimension
+	this.observeFrequencyX=function(){
+		return this.ESD2.spectra[0].observeFrequency;
+	},
+	
+	//Returns the observe frequency in the indirect dimension
+	this.observeFrequencyY=function(){
+		return this.ESD2.indirectFrequency;
+	},
+	//Return the xValue for the given index
+	this.arrayPointToUnits=function(doublePoint){
+		return (this.getFirstX() - (doublePoint* (this.getFirstX() - this.getLastX()) / (this.getNbPoints()-1)));
+	},
+	//Return the first value of the direct dimension
+	this.getFirstX=function(){
+		return this.ESD2.minMax.minX;
+	},
+	//Return the first value of the direct dimension
+	this.getLastX=function(){
+		return this.ESD2.minMax.maxX;
+	},
+	
+	//Return the first value of the direct dimension
+	this.getFirstY=function(){
+		return this.ESD2.minMax.minY;
+	},
+	//Return the first value of the direct dimension
+	this.getLastY=function(){
+		return this.ESD2.minMax.maxY;
+	},
+	//Returns the separation between 2 consecutive points in the spectra domain
+	this.getDeltaX=function(){
+		return (this.getLastX()-this.getFirstX()) / (this.getNbPoints()-1);
+	},
+	//Returns the separation between 2 consecutive points in the indirect domain
+	this.getDeltaY=function(){
+		return ( this.getLastY()-this.getFirstY()) / (this.getNbSubSpectra()-1);
+	},
+	//Return the nucleus of the direct dimension
+	this.getNucleus=function(dim){
+		if(dim==1)
+			return this.ESD2.xType;
+		if(dim==2)
+			return this.ESD2.yType;
+	}
+};
+define("src/sd", function(){});
 
 (function( global, factory ) {
 
@@ -21,7 +1789,7 @@
 
 } ( window, function( window ) {
 
-	var factory = function( Graph, Attribution, JcampConverter, Molecule ) {
+	var factory = function( Graph, Shape1DNMR, Assignment, JcampConverter ) {
 
 		// Root here
 		var defaults = {
@@ -36,9 +1804,8 @@
 		function fetchUrls( nmr, urls, options ) {
 
 			var fetching = [];
-
 			for( var i in urls ) {
-				fetching.push( $.get( urls[ i ] ).then( function( data ) { return JcampConverter.convert( data ) } ) );
+				fetching.push( $.get( urls[ i ] ).then( function( data ) { return JcampConverter.convert( data, {keepSpectra:true} ) } ) );
 			}
 
 			if( ! nmr.divLoading ) {
@@ -82,35 +1849,32 @@
 			} );
 		}
 
+		var ratio, ratioSum;
 
-		function integral_resizemove( nmr, mode, noLoop ) {
+		var integrals = [];
+
+		function recalculateIntegrals( nmr, mode, noLoop ) {
 
 			var sumMax = 0;
+			var l = integrals.length;
 
-			for( var i = 0, l = nmr.integrals[ mode ].length; i < l ; i ++ ) {
-				sumMax = Math.max( sumMax, nmr.integrals[ mode ][ i ].lastSum );
+
+			if( l == 1 ) {
+				ratio = 150 / integrals[ 0 ].sum;
+				ratioSum = integrals[ 0 ].sum;
 			}
 
+			for( var i = 0; i < l ; i ++ ) {
 
-			for( var i = 0, l = nmr.integrals[ mode ].length; i < l ; i ++ ) {
+				integrals[ i ].ratio = ratio;
 
-				nmr.integrals[ mode ][ i ].ratio = Math.abs( sumMax == 0 ? 1 : nmr.integrals[ mode ][ i ].lastSum / sumMax );
-
-				nmr.integrals[ mode ][ i ].setPosition();
-
-				if( nmr.integralBasis ) {
-					nmr.integrals[ mode ][ i ].data.label[ 0 ].text = Math.round( nmr.integrals[ mode ][ i ].lastSum / nmr.integralBasis * 100 ) / 100;	
-				} else {
-					nmr.integrals[ mode ][ i ].data.label[ 0 ].text = 1;	
+				var text = Math.round( integrals[ i ].sum / ratioSum * 100 ) / 100;
+				if( ! isNaN( text ) ) {
+					integrals[ i ].setLabelText( text );
 				}
-				
-				nmr.integrals[ mode ][ i ].setLabelPosition( 0 );
-				nmr.integrals[ mode ][ i ].setLabelText( 0 );
-			}
 
-			
-			if( nmr.isSymmetric( ) && ! noLoop ) {
-				integral_resizemove( nmr, getOtherMode( nmr, mode ), true );
+				//nmr.integrals[ mode ][ i ].setLabelPosition( {0 );
+				integrals[ i ].updateLabels();
 			}
 		}
 
@@ -130,66 +1894,36 @@
 
 		} 
 
+		var nmr1dshapes = [];
+
 		function integralCreated( nmr, mode, integral ) {
 
-			if( nmr.graphs[ mode ].selectedSerie ) {
-				integral.setSerie( nmr.graphs[ mode ].selectedSerie );	
+			nmr1dshapes.push( integral );
+
+			if( nmr.graphs.selectedSerie ) {
+				integral.setSerie( nmr.graphs.selectedSerie );	
 			} else {
-				integral.setSerie( nmr.graphs[ mode ].getSerie( 0 ) );	
+				integral.setSerie( nmr.graphs.getSerie( 0 ) );	
 			}
-			
-
-			makeNMRIntegral( nmr, mode, integral ).then( function( nmrint ) {
-
+		/*	
+			var nmrint = makeNMRIntegral( nmr, mode, integral )
 				nmrint.setSerie( integral.getSerie() );
-				integral.integral = nmrint;
-				nmrint.data.pos = integral.getFromData( 'pos' );
-				nmrint.data.pos2 = integral.getFromData( 'pos2' );//integral.getFromData( 'pos2' );
-				nmrint.originalShape = integral;
+		*/	
+			integral.integral = integral;
+			
+			//nmrint.setProp( 'position', integral.getProp( 'position', 0 ), 0 );
+			//nmrint.setProp( 'position', integral.getProp( 'position', 1 ), 1 );
 
-			} );
-
-		//	 poses.push( integral.getFromData('pos') );
-
-			if( nmr.isSymmetric( ) ) {
-
-				var otherMode = getOtherMode( nmr, mode );
-
-				makePeakPosition( nmr, otherMode ).then( function( shape ) {
-
-					integral.syncTo = shape;
-					shape.syncTo = integral;
-					shape.setSerie( nmr.graphs[ otherMode ].selectedSerie );
-
-					shape.data.pos = {};
-					shape.data.pos2 = {};
-					shape.draw();
-
-					setSyncPos( nmr, integral, integral.syncTo );
-
-					shape.redrawImpl();
-
-					makeNMRIntegral( nmr, otherMode ).then( function( nmrint ) {
-
-						shape.integral = nmrint;
-
-						nmrint.setSerie( shape.getSerie( ) );
-					
-
-						nmrint.data.pos = shape.getFromData( 'pos' );
-						nmrint.data.pos2 = shape.getFromData( 'pos2' );
-						nmrint.originalShape = shape;
-					});	
-				});
-			}
+			integrals.push( integral );
+			//nmrint.originalShape = integral;
 		}
 
-		function integralResized( nmr, mode, peak ) {
+		function integralChanged( nmr, mode, peak ) {
 
 			if( ! peak.integral ) {
 				return;
 			}
-
+/*
 			peak.integral.setPosition();
 
 			if( peak.syncTo ) {
@@ -202,26 +1936,10 @@
 			}
 		
 
-			integral_resizemove( nmr, mode );
+			recalculateIntegrals( nmr, mode );
+			*/
 		}
 
-
-		function integralMoved( nmr, mode, peak ) {
-
-			if( ! peak.integral ) {
-				return;
-			}
-
-			peak.integral.setPosition();
-
-			if( peak.syncTo ) {
-				setSyncPos( nmr, peak, peak.syncTo );
-				peak.syncTo.redrawImpl();
-				peak.syncTo.integral.setPosition();
-			}
-
-			integral_resizemove( nmr, mode );
-		}
 
 		function integralRemoved( nmr, mode, peak ) {
 
@@ -235,76 +1953,50 @@
 				}
 
 				nmr.integrals[ mode ].splice( nmr.integrals[ mode ].indexOf( i ), 1 );
+
+				nmr1dshapes.splice( nmr1dshapes.indexOf( peak ), 1 );//push( integral );
+
+				if( nmr1dshapes.length == 1 ) {
+
+					nmr.integralBasis = nmr.integrals[ mode ][ 0 ].lastSum;
+				}
 			}
 
-			if( peak.syncTo ) {
-				peak.syncTo.kill();
-				nmr.integrals[ getOtherMode( mode ) ].splice( nmr.integrals[ getOtherMode( nmr, mode ) ].indexOf( peak.syncTo.integral ), 1 );
-			}
-
-			integral_resizemove( nmr, mode );
+			recalculateIntegrals( nmr, mode );
 		}
 
 		function getOtherMode( nmr, mode ) {
 			return mode == 'x' ? 'y' : ( mode == 'y' ? 'x' : ( console.error( "Mode not recognized") ) );
 		}
 
-		function makePeakPosition( nmr, mode ) {
-
-			var creator = nmr.graphs[ mode ].newShape( $.extend( true, {}, nmr.nmrSignal1dOptions[ mode ] ), {} );
-
-			if( ! creator ) {
-				creator = $.Deferred().reject();
-			}
-
-			return creator;
-		}
 
 		function makeNMRIntegral( nmr, mode, integral ) {
+			// External call
+			var shape = nmr.graphs[ mode ].newShape( { 
+					type: 'nmrintegral', 
+					fillColor: 'transparent', 
+					strokeColor: '#AF002A', 
+					strokeWidth: '2px',
+					label: {
+						position: { },
+						text: 1,
+						color: 'red',
+						anchor: 'middle'
+					},
 
-			var creator = nmr.graphs[ mode ].newShape( $.extend( true, {}, nmr.nmrIntegralOptions[ mode ] ), {} );
+					shapeOptions: {
+						locked: true
+					}
+				 } );
+			
+			shape.setSerie( nmr.getGraphX().getSerie( 0 ) );
+			shape.setLabelText( "NMRVal" );
+			shape.draw();
+			shape.redraw();
 
-			if( ! creator ) {
-				creator = $.Deferred().reject();
-			} else {
-
-				creator.then( function( nmrint ) {
-
-					nmr.integrals[ mode ].push( nmrint );
-					nmrint.draw();
-					return nmrint;
-				} );
-			}
-
-			return creator;
+			return shape;
 		}
 		
-
-		function getNmrSignal1dHandlers( nmr, mode ) {
-
-			return { 
-
-				shapeOptions: {
-
-					onCreate: function() {
-						integralCreated( nmr, mode, this );
-					},
-
-					onResize: function() {
-						integralResized( nmr, mode, this );
-					},
-
-					onMove: function() {
-						integralMoved( nmr, mode, this );
-					}/*,
-
-					onRemove: function() {
-						integralRemoved( nmr, mode, this );
-					}*/
-				}
-			}
-		}
-
 		function removeSerie( nmr, axis, name ) {
 
 			var serie;
@@ -320,24 +2012,11 @@
 			
 		function doNMR( nmr ) { 
 
-			switch( nmr.getMode() ) {
-
-				case '1d':
-
-				//console.time("Making the whole graph");
+		
+		
 					nmr.options.dom.append('<div />');
 					nmr.makeGraphs1D();
-				//	console.timeEnd("Making the whole graph");
-
-				break;
-
-				case '2d':
-
-					nmr.options.dom.append('<div class="nmr-table-wrapper"><div class="nmr-2d-map" style="width: 150px; height: 150px; position: absolute; right: 0; bottom: 0"></div><table cellpadding="0" cellspacing="0" class="nmr-wrapper"><tr><td></td><td class="nmr-1d nmr-1d-x nmr-main" style="width: 500px; height: 150px;"></td></tr><tr class="nmr-main"><td class="nmr-1d nmr-1d-y"style="height: 500px; width: 150px;"></td><td class="nmr-2d" style="height: 500px; width: 500px;"></td></tr></table></div>');
-					nmr.makeGraphs2D();
-				break;
-
-			}
+		
 		}
 	
 
@@ -348,85 +2027,23 @@
 
 			this.minimapClip;
 			// 1D
-	
-			this.nmrIntegralOptions = {
-				 x: { 
-					type: 'nmrintegral', 
-					fillColor: 'transparent', 
-					strokeColor: 'rgba(100, 0, 0, 0.5)', 
-					strokeWidth: '1px',
-					label: {
-						position: { },
-						text: 1,
-						color: 'red',
-						anchor: 'middle'
-					},
+		
 
-					shapeOptions: {
-						locked: true
-					}
-				 }
-			}
-
-			if( this.isSymmetric() ) {
-				this.nmrIntegralOptions.y = $.extend(true, {}, this.nmrIntegralOptions.x );
-				this.nmrIntegralOptions.y.shapeOptions.axis = 'y';
-			}
-
-			this.nmrSignal1dOptions = {
-
-				x: { 
-					url: 'src/shape.1dnmr',
-					strokeColor: 'green',
-					strokeWidth: 2,
-					shapeOptions: {
-
-						horizontal: true, 
-						forcedCoords: { y: function( shape ) {  return ( 20 + shape.serie.getIndex() * 5 ) + "px"; } },
-						bindable: true,
-						axis: 'x'
-					}
-				}
-			}
-
-
+			Graph.registerConstructor("graph.shape.1dnmr", Shape1DNMR);
+			var self = this;
+			
+/*
 			if( this.isSymmetric() ) {
 				this.nmrSignal1dOptions.y = $.extend(true, {}, this.nmrSignal1dOptions.x );
 				this.nmrSignal1dOptions.y.shapeOptions.axis = 'y';
 			}
 
-			this.nmrSignal1dOptions.x = $.extend( true, {}, this.nmrSignal1dOptions.x, getNmrSignal1dHandlers( this, 'x' ) );
-			this.nmrSignal1dOptions.y = $.extend( true, {}, this.nmrSignal1dOptions.x, getNmrSignal1dHandlers( this, 'y' ) );
+			this.nmrSignal1dOptions.x = $.extend( true, {}, this.nmrSignal1dOptions.x, {} );
+			this.nmrSignal1dOptions.y = $.extend( true, {}, this.nmrSignal1dOptions.x, {} );
 
-
-
-			// 2D
-			this.nmrSignal2dOptions = {
-
-			
-				url: 'src/shape.2dnmr',
-				strokeColor: 'green',
-				strokeWidth: 2,
-				shapeOptions: {
-
-					horizontal: true, 
-					forcedCoords: { y: "20px" },
-					bindable: true,
-					axis: 'x'
-				}
-			}
-
-			switch( this.options.mode ) {
-				case '2d':
-					this.graphs = { x: null, y: null, _2d: null };
-					this.integrals = { x: [], y: [], _2d: [] };
-				break;
-
-				case '1d':
-					this.graphs = { x: null };
-					this.integrals = { x: [] };
-				break;
-			}
+			*/
+			this.graphs = { x: null };
+			this.integrals = { x: [] };
 
 			doNMR( this );
 
@@ -437,10 +2054,16 @@
 				break;
 
 				case '1d':
-					this.legend = this.graphs.x.makeLegend( { frame: true, frameWidth: 2, frameColor: 'grey', movable: true, backgroundColor: 'white' } );
+					this.legend = this.graphs.makeLegend( { frame: true, frameWidth: 2, frameColor: 'grey', movable: true, backgroundColor: 'white' } );
 					this.legend.setPosition( { x: "300px", y: "40px" }, 'right' );
 
 				break;
+			}
+
+			if( this.options.assignment ) {
+
+				this.assignement = new Assignment( $.extend( this.options.assignment, { graphs: this.graphs, domGraphs: this.options.dom } ) );	
+				//this.assignement.setAssignment( [ [ "1", "gGQHLIeIUjdA~dPHeT" ] ] );
 			}
 		}
 
@@ -455,26 +2078,6 @@
 			var urls = {};
 			switch( this.options.mode ) {
 
-				case '2d':
-
-					load.urls.twoD = load.urls.twoD || load.urls.url;
-					load.urls.x = load.urls.x || load.urls.oneD;
-					load.urls.y = ( load.urls.y || load.urls.oneD ) || ( load.symmetric ? load.urls.x : false );
-
-					urls.twoD = load.urls.twoD; // Compulsory
-					
-					if( load.urls.x ) {
-						urls.x = load.urls.x;
-					}
-
-					if( load.urls.y ) {
-						urls.y = load.urls.y;
-					} else if( this.isSymmetric() ) {
-						urls.y = urls.x;
-					}
-
-				
-				break;
 
 				case '1d':
 					
@@ -487,15 +2090,6 @@
 
 
 			fetchUrls( this, urls, load );
-
-			if( load.molecule ) {
-
-				loadMolecule( load.molecule, this.options.dom );
-
-				new Assignation( this.options.dom, this.graphs );
-			}
-
-
 		}
 
 
@@ -511,220 +2105,38 @@
 			return this.options.dom;
 		}
 
+		NMR.prototype.getGraph2D = function() {
+			return this.graphs['_2d'];
+		}
+
+		NMR.prototype.getGraphX = function() {
+			return this.graphs['x'];
+		}
+
+		NMR.prototype.getGraphY = function() {
+			return this.graphs['y'];
+		}
 
 		NMR.prototype.resize1DTo = function( w, h ) {
-			this.graphs[ 'x' ].resize( w, h );
-			this.graphs[ 'x' ].drawSeries();
-		}
-
-		NMR.prototype.resize2DTo = function( w, h ) {
-
-			this.options.dom.find('.nmr-1d-y').css( {
-				height: h - 150,
-				width: 150
-			} );
-
-			this.graphs.y.resize( 150, h - 150 );
-
-
-			this.options.dom.find('.nmr-1d-x').css( {
-				width: w - 150,
-				height: 150
-			} );
-
-			this.graphs.x.resize( w - 150, 150 );
-
-
-			this.options.dom.find('.nmr-2d').css( {
-				width: w - 150,
-				height: h - 150
-			} );
-
-			this.graphs['_2d'].resize( w - 150, h - 150 );
-
-		}
-
-		NMR.prototype.setSerie2DX = function( name, data, options ) {
-
-			if( this.graphs[ 'x'].getSerie( name ) ) {
-				return;
-			}
-			var serie_x = this.graphs['x'].newSerie(name, $.extend( { useSlots: true }, options ) )
-				.setLabel( "My serie" )
-				.autoAxis()
-				.setData( data );
-
-			serie_x.getYAxis().setDisplay( false ).togglePrimaryGrid( false ).toggleSecondaryGrid( false );
-			serie_x.getXAxis().flip(true).setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setTickPosition( 'outside' )
-
-			serie_x.XIsMonotoneous();
-
-			if( options.lineColor ) {
-				serie_x.setLineColor( options.lineColor );
-			}
-
-			if( options.lineWidth ) {
-				serie_x.setLineWidth( options.lineWidth );
-			}
-
-			if( options.setLineStyle ) {
-				serie_x.setLineStyle( options.lineStyle );
-			}
-		}
-
-		NMR.prototype.setSerie2DY = function( name, data, options ) {
-
-	
-			if( this.graphs[ 'y'].getSerie( name ) ) {
-				return;
-			}
-
-			var serie_y = this.graphs['y']
-				.newSerie(name, $.extend( { useSlots: true, flip: true }, options ) )
-				.setLabel( "My serie" )
-				.setXAxis( this.graphs['y'].getBottomAxis( ) )
-				.setYAxis( this.graphs['y'].getRightAxis( ) )
-				.setData( data );
-
-			serie_y.getYAxis().setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).flip( true ).setTickPosition( 'outside' );
-			serie_y.getXAxis().togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setDisplay( false ).flip( true );
-
-			serie_y.XIsMonotoneous();
-
-			if( options.lineColor ) {
-				serie_y.setLineColor( options.lineColor );
-			}
-
-
-			if( options.lineWidth ) {
-				serie_y.setLineWidth( options.lineWidth );
-			}
-
-			if( options.setLineStyle ) {
-				serie_y.setLineStyle( options.lineStyle );
-			}
-
-
-					
-		}
-
-		NMR.prototype.setSerie2D = function( name, data, options ) {
-
-			if( this.graphs[ '_2d'].getSerie( name ) ) {
-				return;
-			}
-
-			var serie_2d = this.graphs[ '_2d' ].newSerie(name, options, 'contour' )
-				.setLabel( "My serie" )
-				.autoAxis()
-				.setData( data )
-/*
-			serie_2d.getXAxis().forceMin( serie_x.getXAxis().getMinValue( ) );
-			serie_2d.getXAxis().forceMax( serie_x.getXAxis().getMaxValue( ) );
-
-			serie_2d.getYAxis().forceMin( serie_y.getYAxis().getMinValue( ) );
-			serie_2d.getYAxis().forceMax( serie_y.getYAxis().getMaxValue( ) );
-
-*/
-			if( this.options.minimap && this.graphs[ '_2d-minimap' ] && 1 == 0) {
-
-				
-				var serie_2d_minimap = this.graphs[ '_2d-minimap' ].newSerie("serie2d", { label: options.label }, 'contour' )
-					.autoAxis()
-					.setData( series.twoD.contourLines )
-/*
-				serie_2d_minimap.getXAxis().forceMin( serie_x.getXAxis().getMinValue( ) );
-				serie_2d_minimap.getXAxis().forceMax( serie_x.getXAxis().getMaxValue( ) );
-
-				serie_2d_minimap.getYAxis().forceMin( serie_y.getYAxis().getMinValue( ) );
-				serie_2d_minimap.getYAxis().forceMax( serie_y.getYAxis().getMaxValue( ) );
-*/
-				this.minimapClip.setSerie( serie_2d_minimap );
-
-				this.graphs[ '_2d-minimap' ].redraw( );
-				this.graphs[ '_2d-minimap' ].drawSeries();
-
-			}
-
-			if( options.lineColor ) {
-				serie_2d.setLineColor( options.lineColor );
-			}
-
-
-			if( options.twoDColor ) {
-				serie_2d.setDynamicColor( options.twoDColor );
-			}
-
-			if( options.twoDNegative ) {
-				serie_2d.setNegative( true );
-			}
-
-			serie_2d.setShapeZoom( this.shapeZoom );
-			this.shapeZoom.setSerie( serie_2d );
-			this.shapeZoom.addSerie( serie_2d );
-
-			if( options.lineWidth ) {
-				serie_2d.setLineWidth( options.lineWidth );
-			}
-
-			if( options.setLineStyle ) {
-				serie_2d.setLineStyle( options.lineStyle );
-			}
-		}
-
-
-		NMR.prototype.removeSerie2DX = function( name ) {
-			removeSerie( this, 'x', name );
-		}
-
-		NMR.prototype.removeSerie2DY = function( name ) {
-			removeSerie( this, 'y', name );
-		}
-
-		NMR.prototype.removeSerie2D = function( name ) {
-			removeSerie( this, '_2d', name );
+			this.graphs.resize( w, h );
+			this.graphs.drawSeries();
 		}
 
 		NMR.prototype.removeSerieX = function( name ) {
 			removeSerie( this, 'x', name );
 		}
 
-		NMR.prototype.redrawAll2D = function() {
-
-			this.graphs[ 'y' ].updateAxes();
-			this.graphs[ 'x' ].updateAxes();
-
-
-			this.graphs['y'].redraw( );
-			this.graphs['y'].drawSeries();	
-
-			this.graphs['x'].redraw( );	
-			this.graphs['x'].drawSeries();	
-
-			this.graphs[ '_2d' ].redraw( );
-			this.graphs[ '_2d' ].drawSeries();
-
-
-
-			this.graphs[ '_2d' ].getXAxis().forceMin( this.graphs['x'].getXAxis().getMinValue() );
-			this.graphs[ '_2d' ].getXAxis().forceMax( this.graphs['x'].getXAxis().getMaxValue() );
-//console.log( this.graphs['y'].getYAxis().getMinValue() );
-			this.graphs[ '_2d' ].getYAxis().forceMin( this.graphs['y'].getRightAxis().getMinValue() );
-			this.graphs[ '_2d' ].getYAxis().forceMax( this.graphs['y'].getRightAxis().getMaxValue() );
-		}
-
-
 		NMR.prototype.setSerieX = function( name, data, options ) {
 
-			if( this.graphs[ 'x' ].getSerie( name ) ) {
+			if( this.graphs.getSerie( name ) ) {
 
-				this.graphs[ 'x' ].getSerie( name ).kill();
-				this.graphs[ 'x' ].removeShapes();
+				this.graphs.getSerie( name ).kill();
+				this.graphs.removeShapes();
 				this.integralBasis = false;
 
 			}
 
-			var serie_x = this.graphs[ 'x' ].newSerie(name, $.extend( { useSlots: true }, options ) )
+			var serie_x = this.graphs.newSerie( name, $.extend( { useSlots: true }, options ) )
 				.setLabel( "My serie" )
 				.autoAxis()
 				.setData( data )
@@ -734,11 +2146,9 @@
 				serie_x.setLineColor( options.lineColor );
 			}
 
-
 			if( options.lineWidth ) {
 				serie_x.setLineWidth( options.lineWidth );
 			}
-
 
 			if( options.setLineStyle ) {
 				serie_x.setLineStyle( options.lineStyle );
@@ -747,12 +2157,14 @@
 			//serie_x.degrade( 1 ).kill()
 
 			serie_x.XIsMonotoneous();
+			serie_x.getXAxis().setAxisDataSpacingMax(0);
+			serie_x.getXAxis().setAxisDataSpacingMin(0);
 
-			serie_x.getYAxis().setDisplay( false ).togglePrimaryGrid( false ).toggleSecondaryGrid( false );
-			serie_x.getXAxis().flip(true).setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setTickPosition( 'outside' )
+			serie_x.getYAxis().setDisplay( false ).primaryGridOff( false ).secondaryGridOff( false );
+			serie_x.getXAxis().flip(true).setLabel('ppm').primaryGridOff( false ).secondaryGridOff( false ).setTickPosition( 'outside' )
 
-			this.graphs.x.autoscaleAxes();
-			this.graphs.x.drawSeries();
+			this.graphs.autoscaleAxes();
+			this.graphs.draw();
 		}
 
 
@@ -763,558 +2175,23 @@
 
 				case '1d':
 
-					this.setSerieX( name, spectra.x.spectra[ 0 ].data[ 0 ], { label: "SomeLabel" } );
+					this.setSerieX( name, series.x.spectra[ 0 ].data[ 0 ], { label: "SomeLabel" } );
 
 
 				break;
 
-				case '2d':
-
-
-					/********************************************/
-					/** LOAD SERIES *****************************/
-					/********************************************/
-
-					this.setSerie2DX( name, series.x.spectra[ 0 ].data[ 0 ], options );
-					this.setSerie2DY( name, series.y.spectra[ 0 ].data[ 0 ], options );
-					this.setSerie2D( name, series.twoD.contourLines, options );
-
-
-					/********************************************/
-					/** DRAW ALL ********************************/
-					/********************************************/
-
-					this.redrawAll2D();
-					
-
-				break;
 
 			}
 
 
 		}
 
-		function loadMolecule( molUrl, nmrDom ) {
-
-			var dom = document.createElement("div");
-			dom.setAttribute('style', 'position: absolute;');
-			// Create a new molecule
-			var molecule = new Molecule( { maxBondLengthAverage: 40 } );
-
-			// Adds the molecule somewhere in the DOM
-			dom.appendChild( molecule.getDom() );
-
-			// Set the size of the canvas
-			molecule.resize( 150, 100 );
-
-			// Fetches the JSON and uses it as the source data
-			molecule.setDataFromJSONFile( molUrl ).then( function() {
-
-				molecule.render();
-
-			});
-
-			nmrDom.prepend( dom );
 	
-		}
-
-
-		/********************************************/
-		/** LOAD GRAPHS *****************************/
-		/********************************************/
-
-		NMR.prototype.makeGraphs2D = function() {
-
-
-			var self = this;
-			
-
-			/** LOAD 2D *********************************/
-			
-			this.graphs[ '_2d' ] = new Graph( this.getDom().find('.nmr-2d').get(0), {
-
-				close: { left: false, top: false, right: false },
-
-				paddingBottom: 0,
-				paddingTop: 0,
-				paddingLeft: 0,
-				paddingRight: 0,
-
-				onAnnotationChange: function( data, shape ) {
-
-					if( data.type == "rect" ) {
-						var pos = data.pos;
-						pos.x = ( pos.x + data.pos2.x ) / 2;
-						pos.y = ( pos.y + data.pos2.y ) / 2;
-
-						this.newShape( {
-
-							type: 'cross',
-							pos: pos,
-
-							strokeColor: 'red',
-							strokeWidth: 3,
-
-							shapeOptions: {
-								length: 20,
-								locked: true
-							}
-
-						} ).then( function( shape2 ) {
-
-							shape2.draw();
-							shape2.redrawImpl();
-
-						} );
-
-						// ANDRES
-						// You can do here your processing and create new shapes
-						shape.kill();
-					}
-				},
-
-				plugins: {
-
-					'graph.plugin.zoom': { 
-
-						zoomMode: 'xy',
-						onZoomStart: function( graph, x, y, e, target ) {
-							self.graphs['x']._pluginExecute( 'graph.plugin.zoom', 'onMouseDown', [ self.graphs['x'], x, y, e, true ] );
-							self.graphs['y']._pluginExecute( 'graph.plugin.zoom', 'onMouseDown', [ self.graphs['y'], x, y, e, true ] );
-
-						},
-
-						onZoomMove: function( graph, x, y, e, target ) {
-							self.graphs['x']._pluginExecute( 'graph.plugin.zoom', 'onMouseMove', [ self.graphs['x'], x, y, e, true ] );
-							self.graphs['y']._pluginExecute( 'graph.plugin.zoom', 'onMouseMove', [ self.graphs['y'], x, y, e, true ] );
-						},
-
-						onZoomEnd: function( graph, x, y, e, target, x1, y1 ) {
-							self.graphs['x']._pluginExecute( 'graph.plugin.zoom', 'onMouseUp', [ self.graphs['x'], x, y, e, true ] );
-							self.graphs['y']._pluginExecute( 'graph.plugin.zoom', 'onMouseUp', [ self.graphs['y'], x, y, e, true ] );
-
-							var x = graph.getBottomAxis().getVal( x1 );
-							var x2 = graph.getBottomAxis().getVal( x );
-
-							var y = graph.getLeftAxis().getVal( y1 );
-							var y2 = graph.getLeftAxis().getVal( y );
-
-							if( self.options.minimap ) {
-								self.minimapClip.data.pos = { x: x, y: y };
-								self.minimapClip.data.pos2 = { x: x2, y: y2 };
-
-								self.minimapClip.redraw();
-							}
-						},
-
-						onDblClick: function( x, y, prefs, e ) {
-							
-							self.graphs['y']._pluginExecute( 'graph.plugin.zoom', 'onDblClick', [ self.graphs['y'], x, y, { mode: 'total' }, e, true ] );
-							self.graphs['x']._pluginExecute( 'graph.plugin.zoom', 'onDblClick', [ self.graphs['x'], x, y, { mode: 'total' }, e, true ] );
-						}
-					},
-
-					'graph.plugin.shape': {
-						type: 'rect',
-
-						fillColor: 'rgba(100, 0, 0, 0.3)',
-
-						shapeOptions: { 
-							bindable: false,
-
-						}
-						
-					},
-				},
-
-				dblclick: {
-					type: 'plugin',
-					plugin: 'graph.plugin.zoom',
-					options: {
-						mode: 'total'
-					}
-				},
-
-				pluginAction: {
-					'graph.plugin.zoom': { shift: false, ctrl: false },
-					'graph.plugin.shape': { shift: true, ctrl: false }
-				},
-
-				wheel: {
-					type: 'toSeries'
-				}/*,
-
-				onBeforeNewShape: function() {
-
-					if( ! this.selectedSerie ) {
-						return false;
-					}
-				}*/,
-
-				onSelectSerie: function( serie ) {
-
-					self.graphs[ 'x' ].selectSerie( self.graphs[ 'x' ].getSerie( serie.getName() ) );
-					self.graphs[ 'y' ].selectSerie( self.graphs[ 'y' ].getSerie( serie.getName() ) );
-				},
-
-				onUnselectSerie: function( serie ) {
-
-					self.graphs[ 'x' ].unselectSerie( self.graphs[ 'x' ].getSerie( serie.getName() ) );
-					self.graphs[ 'y' ].unselectSerie( self.graphs[ 'y' ].getSerie( serie.getName() ) );
-				}
-
-
-
-			} );
-
-
-		
-
-			/** LOAD 2D *********************************/
-			if( this.options.minimap ) {
-				$(".nmr-2d-map").each( function() {
-
-					self.graphs[ '_2d-minimap' ] = new Graph( this, {
-
-					} );
-
-					var whole;
-				    $.when(
-
-				        self.graphs[ '_2d-minimap' ].newShape({ pos: { x: 'min', y: 'min' }, pos2: { x: 'max', y: 'max' }, type: 'rect', fillColor: 'rgba( 100, 100, 100, 0.4 )' }).then( function( shape ) {
-
-				        	whole = shape;
-				        	shape.draw();
-				        	shape.redraw();
-				            shape.setSelectable( false );
-				            shape.setMovable( false );
-
-				        }),
-
-				        self.graphs[ '_2d-minimap' ].newShape({ pos: { x: 'min', y: 'min' }, pos2: { x: 'max', y: 'max' }, type: 'rect', fillColor: 'transparent', shapeOptions: { masker: true } }).then( function( shape ) {
-
-				            shape.staticHandles( true );
-
-				            self.minimapClip = shape;
-
-				            shape.draw();
-				            shape.redraw();
-				        })
-
-
-
-				    ).then( function() {
-
-				    	whole.maskWith( self.minimapClip );
-				    });
-
-
-					  self.graphs[ '_2d-minimap' ].shapeHandlers.onChange.push( function( shape ) {
-
-			            if( shape == self.minimapClip ) {
-
-			                var p = self.minimapClip.data.pos;
-			                var p2 = self.minimapClip.data.pos2;
-
-
-							p.x = self.graphs[ '_2d-minimap' ].getValPosition( p.x, shape.serie.getXAxis() );
-							p.y = self.graphs[ '_2d-minimap' ].getValPosition( p.y, shape.serie.getYAxis() );
-							p2.x = self.graphs[ '_2d-minimap' ].getValPosition( p2.x, shape.serie.getXAxis() );
-							p2.y = self.graphs[ '_2d-minimap' ].getValPosition( p2.y, shape.serie.getYAxis() );
-
-
-							if( isNaN( p.x ) || isNaN( p2.x ) || isNaN( p.y ) || isNaN( p2.y ) ) {
-								return;
-							}
-
-			                self.graphs[ '_2d' ].getXAxis().zoom( p.x, p2.x );
-			                self.graphs[ '_2d' ].getYAxis().zoom( p.y, p2.y );
-
-			                self.graphs[ '_2d' ].redraw();
-			                self.graphs[ '_2d' ].drawSeries();
-
-			                self.graphs[ 'x' ].getXAxis().zoom( p.x, p2.x );
-			                
-
-			                self.graphs[ 'x' ].redraw();
-			                self.graphs[ 'x' ].drawSeries();
-			                
-			                
-			                self.graphs[ 'y' ].getYAxis().zoom( p.y, p2.y );
-
-			                self.graphs[ 'y' ].redraw();
-			                self.graphs[ 'y' ].drawSeries();
-			                
-			            }
-			        } );
-
-
-					self.graphs[ '_2d-minimap' ].getXAxis().setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setDisplay( false ).flip( true );
-					self.graphs[ '_2d-minimap' ].getYAxis().togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setDisplay( false ).flip( true );
-
-					self.graphs[ '_2d-minimap' ].getXAxis().setAxisDataSpacing( 0 );
-					self.graphs[ '_2d-minimap' ].getYAxis().setAxisDataSpacing( 0 );
-
-
-
-				});
-			}
-		
-			self.graphs[ '_2d' ].getXAxis().setLabel('ppm').togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setDisplay( false ).flip( true );
-			self.graphs[ '_2d' ].getYAxis().togglePrimaryGrid( false ).toggleSecondaryGrid( false ).setDisplay( false ).flip( true );
-
-			self.graphs[ '_2d' ].getXAxis().setAxisDataSpacing( 0 );
-			self.graphs[ '_2d' ].getYAxis().setAxisDataSpacing( 0 );
-
-
-	
-			var legend = this.graphs[ '_2d' ].makeLegend( { frame: true, frameColor: 'grey', frameWidth: 1, movable: true } );
-			legend.setPosition( { x: '20px', y: '20px' } );
-
-			this.graphs[ '_2d' ].newShape( {
-
-				type: 'zoom2d',
-				pos: { x: 'min', dx: '-210px', y: 'max', dy: '-130px' }
-
-			} ).then( function( shape ) {
-
-				shape.draw();
-				shape.redraw();
-				self.shapeZoom = shape;
-
-			} );
-
-			/** LOAD X **********************************/	
-
-			this.graphs['x'] = new Graph( this.getDom().find('.nmr-1d-x').get(0), {
-
-				close: { left: false, top: false, right: false },
-				paddingBottom: 0,
-				paddingTop: 0,
-				paddingLeft: 0,
-				paddingRight: 0,
-
-				onAnnotationChange: function( data, shape ) {
-
-					if( data.url.indexOf("shape.1dnmr") > -1 ) {
-
-						if( ! self.integralBasis ) {
-							self.integralBasis = shape.integral.lastSum;
-						}
-
-
-					} else if( data.type == "nmrintegral" ) {
-
-						if( self.integralBasis ) {
-
-							var fl = parseFloat( shape.data.label[ 0 ].text );
-							
-							if( fl != 0 ) {
-								self.integralBasis = shape.lastSum / fl;
-							}
-
-						}
-						
-					}
-
-					integral_resizemove( self, 'x' );
-
-					
-					if( self.isSymmetric() ) {
-						integral_resizemove( self, 'y' );
-					}
-				},
-
-				plugins: {
-					'graph.plugin.zoom': { 
-						zoomMode: 'x',
-
-						onZoomStart: function( graph, x, y, e, target ) {
-
-							self.graphs[ '_2d' ]._pluginExecute( 'graph.plugin.zoom', 'onMouseDown', [ self.graphs[ '_2d' ], x, undefined, e, true ] );
-
-						},
-
-						onZoomMove: function( graph, x, y, e, target ) {
-
-							self.graphs[ '_2d' ]._pluginExecute( 'graph.plugin.zoom', 'onMouseMove', [ self.graphs[ '_2d' ], x, undefined, e, true ] );
-
-						},
-
-						onZoomEnd: function( graph, x, y, e, target ) {
-
-
-							var xaxis = self.graphs['x'].getXAxis();
-							var from = xaxis.getActualMin();
-							var to = xaxis.getActualMax();
-
- 							self.graphs['_2d']._applyToAxes( '_doZoomVal', [ from, to ], true, false );
- 							self.graphs['_2d'].redraw();
- 							self.graphs['_2d'].drawSeries();
-							self.graphs[ '_2d' ]._pluginExecute( 'graph.plugin.zoom', 'removeZone', [ ] );
-
-						},
-
-						onDblClick: function( x, y, prefs, e ) {
-							
-							self.graphs[ '_2d' ]._pluginExecute( 'graph.plugin.zoom', 'onDblClick', [ self.graphs[ '_2d' ], x, y, { mode: 'xtotal' }, e, true ] );
-							
-						}
-
-					},
-
-					'graph.plugin.shape': self.nmrSignal1dOptions[ 'x' ],
-				},
-
-
-				dblclick: {
-					type: 'plugin',
-					plugin: 'graph.plugin.zoom',
-					options: {
-						mode: 'total'
-					}
-				},
-
-				pluginAction: {
-					'graph.plugin.zoom': { shift: false, ctrl: false },
-					'graph.plugin.shape': { shift: true, ctrl: false }
-				},
-
-
-				wheel: {
-					type: 'plugin',
-					plugin: 'graph.plugin.zoom',
-					options: {
-						direction: 'x'
-					}
-				},
-
-
-				onBeforeNewShape: function() {
-
-					if( ! self.graphs['_2d'].selectedSerie ) {
-						return false;
-					}
-				}
-
-			} );
-
-
-			  self.graphs[ 'x' ].shapeHandlers.onCreated.push( function( shape ) {
-
-			  	if( shape.data.url.indexOf("src/shape.1dnmr") > -1) {
-
-			  		shape.set('strokeColor', shape.serie.getLineColor() );
-			  		shape.setStrokeColor();
-			  	}
-
-			} );
-
-			self.graphs[ 'x' ].getXAxis().options.wheelBaseline = 0;
-
-
-
-			/** LOAD Y **********************************/
-			
-			this.graphs['y'] = new Graph( this.getDom().find('.nmr-1d-y').get(0), { 
-
-				close: { left: false, top: false, right: false },
-
-				plugins: {
-					'graph.plugin.zoom': { 
-						zoomMode: 'y',
-						onZoomStart: function( graph, x, y, e, target ) {
-
-							self.graphs[ '_2d' ]._pluginExecute( 'graph.plugin.zoom', 'onMouseDown', [ self.graphs[ '_2d' ], undefined , y, e, true ] );
-
-						},
-
-						onZoomMove: function( graph, x, y, e, target ) {
-
-							self.graphs[ '_2d' ]._pluginExecute( 'graph.plugin.zoom', 'onMouseMove', [ self.graphs[ '_2d' ], undefined , y, e, true ] );
-
-						},
-
-						onZoomEnd: function( graph, x, y, e, target ) {
-
-
-							var yaxis = self.graphs['y'].getYAxis();
-							var from = yaxis.getActualMin();
-							var to = yaxis.getActualMax();
-
- 							self.graphs['_2d']._applyToAxes( '_doZoomVal', [ from, to ], false, true );
- 							self.graphs['_2d'].redraw();
- 							self.graphs['_2d'].drawSeries();
-							self.graphs[ '_2d' ]._pluginExecute( 'graph.plugin.zoom', 'removeZone', [ ] );
-
-/*
-
-							var xaxis = self.graphs['y'].getYAxis();
-							var from = xaxis.getCurrentMin();
-							var to = xaxis.getCurrentMax();
-console.log( from, to );
- 							self.graphs['_2d']._applyToAxes( '_doZoomVal', [ from, to ], false, true );
-
- 							*/
-
-							//self.graphs[ '_2d' ]._pluginExecute( 'graph.plugin.zoom', 'onMouseUp', [ self.graphs[ '_2d' ], undefined, y, e, true ] );
-
-						},
-
-						onDblClick: function( x, y, prefs, e ) {
-							
-							self.graphs[ '_2d' ]._pluginExecute( 'graph.plugin.zoom', 'onDblClick', [ self.graphs[ '_2d' ], x, y, { mode: 'ytotal' }, e, true ] );
-							
-						}
-					},
-
-					'graph.plugin.shape': self.nmrSignal1dOptions[ 'y' ]
-				},
-
-
-				dblclick: {
-					type: 'plugin',
-					plugin: 'graph.plugin.zoom',
-					options: {
-						mode: 'total'
-					}
-				},
-
-				pluginAction: {
-					'graph.plugin.zoom': { shift: false, ctrl: false },
-					'graph.plugin.shape': { shift: true, ctrl: false }
-				},
-
-				wheel: {
-					type: 'plugin',
-					plugin: 'graph.plugin.zoom',
-					options: {
-						direction: 'y'
-					}
-				},
-
-				paddingBottom: 0,
-				paddingTop: 0,
-				paddingLeft: 0,
-				paddingRight: 10,
-
-				onBeforeNewShape: function() {
-
-					if( ! self.graphs['_2d'].selectedSerie ) {
-						return false;
-					}
-				}
-
-			} );
-			
-		}
-
-
 		NMR.prototype.makeGraphs1D = function() {
 
 			var self = this;
 
-			this.graphs['x'] = new Graph( this.getDom().children().get(0), {
+			this.graphs = new Graph( this.getDom().children().get(0), {
 
 				close: { left: false, top: false, right: false },
 				paddingBottom: 0,
@@ -1322,48 +2199,52 @@ console.log( from, to );
 				paddingLeft: 0,
 				paddingRight: 0,
 
-
-				onAnnotationChange: function( data, shape ) {
-
-
-					if( data.url && data.url.indexOf("shape.1dnmr") > -1 ) {
-
-						if( ! self.integralBasis ) {
-							self.integralBasis = shape.integral.lastSum;
-						}
-
-
-					} else if( data.type == "nmrintegral" ) {
-
-
-						if( self.integralBasis ) {
-
-							var fl = parseFloat( shape.data.label[ 0 ].text );
-							
-							if( fl != 0 ) {
-								self.integralBasis = shape.lastSum / fl;
-							}
-
-						}
-						
-					}
-
-					integral_resizemove( self, 'x' );
-				},
-
 				plugins: {
-					'graph.plugin.zoom': { 
+					'zoom': { 
 						zoomMode: 'x'
 
 					},
 
-					'graph.plugin.shape': this.nmrSignal1dOptions[ 'x' ],
+					'shape': { 
+						type: 'nmrintegral',
+						strokeColor: '#AF002A', 
+						fillColor: "transparent",
+						strokeWidth: 2,
+
+						locked: false,
+						movable: true,
+						resizable: true,
+						selectable: true,
+						selectOnMouseDown: true,
+						handles: true,
+						labelEditable: true,
+
+						horizontal: true, 
+						forcedCoords: { y: function( shape ) { return ( 20 + shape.serie.getIndex() * 5 ) + "px"; } },
+						bindable: true,
+						axis: 'x',
+
+						labels: [ { text: "Something", color: 'red' } ] ,
+
+
+
+						attributes: { 'data-bindable': function() { return 1; } },
+
+						onCreatedShape: function( shape ) {
+							//console.log( self.graphs[ 'x' ].getSerie( 0 ) );
+							shape.setSerie( self.graphs.getSerie( 0 ) );
+							integralCreated( self, 'x', shape );
+						},
+
+
+						highlightOnMouseOver: true
+					},
 				},
 
 
 				dblclick: {
 					type: 'plugin',
-					plugin: 'graph.plugin.zoom',
+					plugin: 'zoom',
 					options: {
 						mode: 'total'
 					}
@@ -1372,16 +2253,17 @@ console.log( from, to );
 
 				wheel: {
 					type: 'plugin',
-					plugin: 'graph.plugin.zoom',
+					plugin: 'zoom',
 					options: {
-						direction: 'x'
+						direction: 'y',
+						baseline: 0
 					}
 				},
 
 
 				pluginAction: {
-					'graph.plugin.zoom': { shift: false, ctrl: false },
-					'graph.plugin.shape': { shift: true, ctrl: false }
+					'zoom': { shift: false, ctrl: false },
+					'shape': { shift: true, ctrl: false }
 				},
 
 				onBeforeNewShape: function() {
@@ -1394,33 +2276,70 @@ console.log( from, to );
 			} );
 
 
-			this.graphs[ 'x' ].setHeight(300);
-			this.graphs[ 'x' ].getXAxis().options.wheelBaseline = 0;
-			
-			this.graphs[ 'x' ].shapeHandlers.onRemoved.push( function( shape ) {
+			this.graphs.setHeight(300);
+	
 
+			this.graphs.on("shapeChanged", function( shape ) {
 
-				if( shape.integral ) {
+				
 
-					integralRemoved( self, 'x', shape );
+				if( shape.getType() == "nmrintegral" ) {
 
-				} else if( shape.originalShape ) {
-					
-					shape.originalShape.kill();
-					
+					recalculateIntegrals( self );
+
 				}
-		
+
+
+
+				
 			});
 
-		
+			this.graphs.on("shapeLabelChanged", function( shape ) {
+
+
+				if( shape.getType() == "nmrintegral" ) {
+
+					var fl = parseFloat( shape.getLabelText( 0 ) );
+					ratioSum = shape.sum / fl;
+					recalculateIntegrals( self );
+
+				}
+
+
+
+			} );
+
+/*
+			this.graphs[ 'x' ].on("shapeRemoved", function( shape ) {
+
+				if( shape.integral ) {
+					integralRemoved( self, 'x', shape );
+				} else if( shape.originalShape ) {
+					shape.originalShape.kill();
+				}
+			});
+
+
+
+			this.graphs[ 'x' ].on("shapeNew", function( shape ) {
+
+				if( shape.getType() == "1dnmr" ) {
+					integralCreated( self, 'x', shape );
+
+					shape.setHighlightAttributes( { 'stroke-width': 5 } );
+					shape.addClass("bindable");
+				}
+			});
+
+*/
 		
 			/********************************************/
 			/** DRAW ALL ********************************/
 			/********************************************/
 
 
-			this.graphs[ 'x' ].redraw( );	
-			this.graphs[ 'x' ].drawSeries();	
+			this.graphs.redraw( );	
+			this.graphs.drawSeries();	
 
 		}
 
@@ -1432,234 +2351,23 @@ console.log( from, to );
 
     if( typeof define === "function" && define.amd ) {
         
-        define( [ 'graph', 'assignation', 'jcampconverter', 'lib/components/VisuMol/src/molecule' ], function( Graph, Assignation, JcampConverter, Molecule ) {
-            return factory( Graph, Assignation, JcampConverter, Molecule );
+
+        define( 'src/nmr.js',[ 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter', './sd' ], function( Graph, Shape1DNMR, Assignment, JcampConverter, SD ) {
+            return factory( Graph, Shape1DNMR, Assignment, JcampConverter );
+
         });
 
     } else if( window ) {
         
-        if( window.Graph && window.Assignation && window.JcampConverter ) {
+        if( window.Graph && window.Assignment && window.JcampConverter ) {
 
         	// Namespace NMRHandler
-        	window.NMRHandler = factory( window.Graph, window.Assignation, window.JcampConverter, window.Molecule );	
+        	window.NMRHandler = factory( window.Graph, window.Shape1DNMR, window.Assignment, window.JcampConverter );	
 
         } else {
-        	throw "Graph, Attribution or Jcamp is not defined"
+        	throw "Graph, Assignment or Jcamp is not defined"
         }
     }
 
 }));
 
-
-
-/*!
- * jsGraphs JavaScript Graphing Library v1.1.1
- * http://github.com/NPellet/jsGraphs
- *
- * Copyright 2014 Norman Pellet
- * Released under the MIT license
- *
- * Date: 2014-12-08T21:07Z
- */
-
-(function( global, factory ) {
-
-	if ( typeof module === "object" && typeof module.exports === "object" ) {
-		
-		module.exports = factory( global );
-			
-	} else {
-
-		factory( global );
-
-	}
-
-// Pass this if window is not defined yet
-}( ( typeof window !== "undefined" ? window : this ), function( window ) {
-
-	"use strict";
-
-	var Assignation = function( $ ) {
-
-		return function( domGlobal, graphs ) {
-
-			var binding = false,
-			bindingA = false,
-			bindingB = false,
-			bindingLine,
-			bindingPairs = [],
-
-			mousedown = function( el, event ) {
-
-				if( event.shiftKey ) {
-
-					for( var i in graphs ) { // We need to lock all graphs to prevent actions on the shapes.
-						graphs[ i ].lockShapes();	
-					}
-					
-					binding = true;
-					bindingA = el;
-
-					event.preventDefault();
-					event.stopPropagation();
-				}
-
-				// Try to be smart and determine where to put the line ?
-				var pos = $( el ).position(),
-				
-					w = parseFloat( el.getAttribute('width') || 0 ),
-					h = parseFloat( el.getAttribute('height') || 0 ),
-
-					x2 = parseFloat( el.getAttribute('x2') || 0 ),
-					y2 = parseFloat( el.getAttribute('y2') || 0 ),
-
-					x1 = parseFloat( el.getAttribute('x1') || 0 ),
-					y1 = parseFloat( el.getAttribute('y1') || 0 ),
-
-
-					x = pos.left + ( w / 2 ) + ( Math.abs( x2 - x1 ) / 2 ),
-					y = pos.top  + ( h / 2 ) + ( Math.abs( y2 - y1 ) / 2 );
-
-				bindingLine.setAttribute('display', 'block');
-
-				bindingLine.setAttribute('x1', x );
-				bindingLine.setAttribute('x2', x );
-
-				bindingLine.setAttribute('y1', y );
-				bindingLine.setAttribute('y2', y );
-			},
-
-			mouseup = function( el, event ) {
-
-				if( ! binding ) {
-					return;
-				}
-
-				var target = event.target;
-				bindingLine.setAttribute('display', 'none');
-
-				if( ! target.classList.contains( 'bindable' ) ) {
-
-					binding = false;
-
-				} else {
-
-					bindingB = event.target;
-					binding = false;
-					bindSave();
-				}
-
-				for( var i in graphs ) { // We can now unlock everything
-					graphs[ i ].unlockShapes();	
-				}			
-			},
-
-			mousemove = function( e ) {
-
-				if( ! binding ) {
-					return;
-				}
-
-				bindingLine.setAttribute('x2', e.clientX );
-				bindingLine.setAttribute('y2', e.clientY );
-			},
-
-			highlight = function( element ) {
-				all( 'highlight', element );
-			},
-
-			unhighlight = function( element ) {
-				all( 'unhighlight', element );
-			},
-
-			all = function( fct, element ) {
-
-				for( var i = 0, l = bindingPairs.length ; i < l ; i ++ ) {
-
-					if( bindingPairs[ i ][ 0 ] == element || bindingPairs[ i ][ 1 ] == element ) {
-
-						if( bindingPairs[ i ][ 0 ].element ) {
-							bindingPairs[ i ][ 0 ].element[ fct ]();
-						} else {
-							console.log( "Manual" );
-						}
-
-						if( bindingPairs[ i ][ 1 ].element ) {
-							bindingPairs[ i ][ 1 ].element[ fct ]();
-						} else {
-							console.log( "Manual" );
-						}
-					}
-				}
-			},
-
-			bindSave = function() {
-
-				bindingPairs.push( [ bindingA, bindingB ] );
-				bindingA = null;
-				bindingB = null;
-
-			},
-
-			setEvents = function( ) {
-
-				domGlobal.on('mousedown', '.bindable', function( e ) {
-					mousedown( this, e );
-				});
-
-
-				domGlobal.on('mouseover', '.bindable', function( e ) {
-					highlight( this );
-				});
-
-
-				domGlobal.on('mouseout', '.bindable', function( e ) {
-					unhighlight( this );
-				});
-
-
-				domGlobal.on('mouseup', function( e ) {
-					mouseup( this, e );
-				});
-
-				domGlobal.on('mousemove', function( e ) {
-					mousemove( e );
-				})
-			};
-
-
-			var ns = 'http://www.w3.org/2000/svg',
-
-			topSVG = document.createElementNS( ns, 'svg' );
-			topSVG.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", "http://www.w3.org/1999/xlink");
-			topSVG.setAttribute('xmlns', ns );
-		
-			topSVG.setAttribute('style', 'position: absolute');
-			topSVG.setAttribute('width', domGlobal.width( ) )
-			topSVG.setAttribute('height', domGlobal.height( ) )
-			topSVG.setAttribute('pointer-events', 'none');
-
-			bindingLine = document.createElementNS( ns, 'line');
-			bindingLine.setAttribute('stroke', 'black');
-
-			topSVG.appendChild( bindingLine );
-
-			domGlobal.prepend( topSVG );
-			setEvents( );	
-		}
-	};
-
-	if( typeof define === "function" && define.amd ) {
-		define( [ 'jquery' ], function( $ ) {
-			return Assignation( $ );
-		});
-	} else if( window ) {
-
-		if( ! window.jQuery ) {
-			throw "jQuery has not been loaded. Abort assignation initialization."
-			return;
-		}
-
-		window.Assignation = Assignation( window.jQuery );
-	}
-}));

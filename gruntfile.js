@@ -6,19 +6,13 @@ module.exports = function(grunt) {
     grunt.initConfig({
 
         pkg: grunt.file.readJSON('package.json'),
-
-        uglify: {
-
-            './dist/jsnmr.min.js': [ './src/nmr.js', './src/assignation.js' ]
-
-        },
-
+        
         copy: {
 
             dist: {
 
                 files: {
-                    './dist/jsnmr.js': [ './src/nmr.js', './src/assignation.js' ]
+                    './dist/jsnmr.js': [ './src/nmr.js'/*, './src/assignation.js' */]
                 }    
             },
 
@@ -38,6 +32,37 @@ module.exports = function(grunt) {
                 updateConfigs: [ 'pkg' ],
                 push: false
             }
+        },
+        
+        requirejs: {
+            compile: {
+                options: {
+                    baseUrl: './',
+                    include: ['./src/nmr.js'],
+                    out: 'dist/jsnmr.js',
+                    paths: {
+                        jsgraph: 'empty:',
+                        jquery: 'empty:',
+                        jcampconverter: 'empty:'
+                    },
+                    optimize: 'none'
+                }
+            },
+            compileMin: {
+                options: {
+                    baseUrl: './',
+                    include: ['./src/nmr.js'],
+                    out: 'dist/jsnmr.min.js',
+                    paths: {
+                        jsgraph: 'empty:',
+                        jquery: 'empty:',
+                        jcampconverter: 'empty:'
+                    },
+                    optimize: 'uglify2',
+                    generateSourceMaps: true,
+                    preserveLicenseComments: false
+                }
+            }
         }
     });
 
@@ -49,11 +74,10 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-sloc');
     grunt.loadNpmTasks('grunt-contrib-requirejs');
     grunt.loadNpmTasks('grunt-contrib-copy');
-    grunt.loadNpmTasks('grunt-contrib-uglify');
     grunt.loadNpmTasks('grunt-contrib-clean');
     grunt.loadNpmTasks('grunt-bump');
 
-    grunt.registerTask('default', [ 'uglify', 'concatSource', 'concatMin' ]);
+    grunt.registerTask('default', [ 'requirejs', 'concatSource', 'concatMin' ]);
 
 
     function processSource( source ) {
@@ -68,10 +92,10 @@ module.exports = function(grunt) {
 
     grunt.registerTask( 'concatSource', 'Concat all src files', function() {
 
-        var source = [ './src/build_utils/header.js', './src/nmr.js', './src/assignation.js' ];
+        var source = [ './src/build_utils/header.js', './dist/jsnmr.js' ];
         source = source.map( function( path ) {
             return grunt.file.read( path );
-        })
+        });
         
         grunt.file.write( './dist/jsnmr.js', processSource( source ) );
 
@@ -83,7 +107,7 @@ module.exports = function(grunt) {
         var source = [ './src/build_utils/header.min.js', './dist/jsnmr.min.js' ];
         source = source.map( function( path ) {
             return grunt.file.read( path );
-        })
+        });
         
         grunt.file.write( './dist/jsnmr.min.js', processSource( source ) );
 
