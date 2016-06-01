@@ -1,5 +1,5 @@
 /*!
- * jsNMR JavaScript Graphing Library v1.1.1
+ * jsNMR JavaScript Graphing Library v0.0.2
  * http://github.com/NPellet/jsNMR
  *
  * Copyright 2014 Norman Pellet and other authors
@@ -7,7 +7,7 @@
  *
  * Released under the MIT license
  *
- * Date: 2016-06-01T11:42Z
+ * Date: 2016-06-01T11:48Z
  */
 
 
@@ -261,13 +261,13 @@ define( 'src/shape.1dnmr',[ 'jquery', 'jsgraph' ], function( $, Graph ) {
 
 
 /*!
- * jsGraphs JavaScript Graphing Library v1.1.1
+ * jsGraphs JavaScript Graphing Library v0.0.2
  * http://github.com/NPellet/jsGraphs
  *
  * Copyright 2014 Norman Pellet
  * Released under the MIT license
  *
- * Date: 2016-06-01T11:42Z
+ * Date: 2016-06-01T11:48Z
  */
 
 (function( global, factory ) {
