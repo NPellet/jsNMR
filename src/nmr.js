@@ -69,34 +69,7 @@
 			} );
 		}
 
-		var ratio, ratioSum;
-
-		var integrals = [];
-
-		function recalculateIntegrals( nmr, mode, noLoop ) {
-
-			var sumMax = 0;
-			var l = integrals.length;
-
-
-			if( l == 1 ) {
-				ratio = 150 / integrals[ 0 ].sum;
-				ratioSum = integrals[ 0 ].sum;
-			}
-
-			for( var i = 0; i < l ; i ++ ) {
-
-				integrals[ i ].ratio = ratio;
-
-				var text = Math.round( integrals[ i ].sum / ratioSum * 100 ) / 100;
-				if( ! isNaN( text ) ) {
-					integrals[ i ].setLabelText( text );
-				}
-
-				//nmr.integrals[ mode ][ i ].setLabelPosition( {0 );
-				integrals[ i ].updateLabels();
-			}
-		}
+	
 
 		function setSyncPos( nmr, from, to ) {
 
@@ -134,7 +107,7 @@
 			//nmrint.setProp( 'position', integral.getProp( 'position', 0 ), 0 );
 			//nmrint.setProp( 'position', integral.getProp( 'position', 1 ), 1 );
 
-			integrals.push( integral );
+			nmr.integrals.push( integral );
 			//nmrint.originalShape = integral;
 		}
 
@@ -182,7 +155,7 @@
 				}
 			}
 
-			recalculateIntegrals( nmr, mode );
+			nmr.recalculateIntegrals(mode );
 		}
 
 		function getOtherMode( nmr, mode ) {
@@ -192,7 +165,7 @@
 
 		function makeNMRIntegral( nmr, mode, integral ) {
 			// External call
-			var shape = nmr.graphs[ mode ].newShape( { 
+			var shape = nmr.graphs.newShape( { 
 					type: 'nmrintegral', 
 					fillColor: 'transparent', 
 					strokeColor: '#AF002A', 
@@ -224,18 +197,16 @@
 				serie.kill();
 			}
 
-			nmr.graphs[ axis ].redraw();
-			nmr.graphs[ axis ].drawSeries();
+			nmr.graphs.redraw();
+			nmr.graphs.drawSeries();
 
 		}
 
 			
 		function doNMR( nmr ) { 
-
-		
-		
-					nmr.options.dom.append('<div />');
-					nmr.makeGraphs1D();
+	
+			nmr.options.dom.append('<div />');
+			nmr.makeGraphs1D();
 		
 		}
 	
@@ -247,7 +218,8 @@
 
 			this.minimapClip;
 			// 1D
-		
+			
+			this.integrals = [];
 
 			Graph.registerConstructor("graph.shape.1dnmr", Shape1DNMR);
 			var self = this;
@@ -311,6 +283,32 @@
 
 			fetchUrls( this, urls, load );
 		}
+
+		NMR.prototype.recalculateIntegrals = function( mode, noLoop ) {
+
+			var sumMax = 0;
+			var l = nmr.integrals.length;
+			var nmr = this;
+
+			if( l == 1 ) {
+				nmr.ratio = 150 / integrals[ 0 ].sum;
+				nmr.ratioSum = integrals[ 0 ].sum;
+			}
+
+			for( var i = 0; i < l ; i ++ ) {
+
+				nmr.integrals[ i ].ratio = nmr.ratio;
+
+				var text = Math.round( nmr.integrals[ i ].sum / nmr.ratioSum * 100 ) / 100;
+				if( ! isNaN( text ) ) {
+					nmr.integrals[ i ].setLabelText( text );
+				}
+
+				//nmr.integrals[ mode ][ i ].setLabelPosition( {0 );
+				nmr.integrals[ i ].updateLabels();
+			}
+		}
+
 
 
 		NMR.prototype.isSymmetric = function() {
@@ -505,7 +503,7 @@
 
 				if( shape.getType() == "nmrintegral" ) {
 
-					recalculateIntegrals( self );
+					self.recalculateIntegrals( );
 
 				}
 
@@ -516,17 +514,12 @@
 
 			this.graphs.on("shapeLabelChanged", function( shape ) {
 
-
 				if( shape.getType() == "nmrintegral" ) {
 
 					var fl = parseFloat( shape.getLabelText( 0 ) );
-					ratioSum = shape.sum / fl;
-					recalculateIntegrals( self );
-
+					self.ratioSum = shape.sum / fl;
+					self.recalculateIntegrals( );
 				}
-
-
-
 			} );
 
 /*
