@@ -1,11 +1,11 @@
 
-define( [ 'jsgraph' ], function( Graph ) {
+define( [ 'jquery', 'jsgraph' ], function( $, Graph ) {
 
 	"use strict";
 	var lineHeight = 5;
 	var GraphLine = Graph.getConstructor( 'graph.shape.line' );
 
-	var GraphNmrSignal1D = function( graph, options ) {
+	function GraphNmrSignal1D( graph, options ) {
 
 		this.options = options || 2;
 		
@@ -168,9 +168,9 @@ define( [ 'jsgraph' ], function( Graph ) {
 			var X = []//x[2:(x.length-2)];
 	
 			// fill Savitzky-Golay polynomes
-			var Y = new Array();
-			var dY = new Array();
-			var ddY = new Array();
+			var Y = [];
+			var dY = [];
+			var ddY = [];
 			for (var j = 2; j < x.length -2; j++){
 				Y.push((1/35.0)*(-3*y[j-2] + 12*y[j-1] + 17*y[j] + 12*y[j+1] - 3*y[j+2]));
 				X.push(x[j]);
@@ -179,10 +179,10 @@ define( [ 'jsgraph' ], function( Graph ) {
 			}
 		
 			// pushs max and min points in convolution functions
-			var maxY = new Array();
-			var stackInt = new Array();
-			var intervals = new Array();
-			var minddY = new Array();
+			var maxY = [];
+			var stackInt = [];
+			var intervals = [];
+			var minddY = [];
 			for (var i = 1; i < Y.length -1 ; i++)
 			{
 				if ((Y[i] > Y[i-1]) && (Y[i] > Y[i+1]))

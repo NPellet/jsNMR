@@ -1,34 +1,10 @@
-
-/*!
- * jsGraphs JavaScript Graphing Library v@VERSION
- * http://github.com/NPellet/jsGraphs
- *
- * Copyright 2014 Norman Pellet
- * Released under the MIT license
- *
- * Date: @DATE
- */
-
-(function( global, factory ) {
-
-	if ( typeof module === "object" && typeof module.exports === "object" ) {
-		
-		module.exports = factory( global );
-			
-	} else {
-
-		factory( global );
-
-	}
-
-// Pass this if window is not defined yet
-}( ( typeof window !== "undefined" ? window : this ), function( window ) {
+define( [ 'jquery' ], function( $ ) {
 
 	"use strict";
 
 	var ns = 'http://www.w3.org/2000/svg';
 
-		var Constructor = function( options ) {
+		var Assignment = function( options ) {
 
 		//	domMolecule, domGraphs, domGlobal, moleculeFilter, graphs
 			var self = this;
@@ -492,7 +468,7 @@
 			setEvents( );	
 	};
 
-	Constructor.prototype.getAssignment = function() {
+	Assignment.prototype.getAssignment = function() {
 
 		var self = this;
 
@@ -510,13 +486,13 @@
 	}
 
 
-	Constructor.prototype.findElement = function( target, selector ) {
+	Assignment.prototype.findElement = function( target, selector ) {
 
 		return $( this.options[ target ].dom ).find( "[" + this.options[ target ].attributeEquivalents + "=\"" + selector + "\"]");	
 	};
 
 
-	Constructor.prototype.setAssignment = function( pairs ) {
+	Assignment.prototype.setAssignment = function( pairs ) {
 
 		var self = this;
 		self.bindingPairs = [];
@@ -528,22 +504,6 @@
 		} );
 	}
 
+	return Assignment;
 
-	var Assignment = function( $ ) {
-		return Constructor;
-	};
-
-	if( typeof define === "function" && define.amd ) {
-		define( [ 'jquery' ], function( $ ) {
-			return Assignment( $ );
-		});
-	} else if( window ) {
-
-		if( ! window.jQuery ) {
-			throw "jQuery has not been loaded. Abort assignment initialization."
-			return;
-		}
-
-		window.Assignment = Assignment( window.jQuery );
-	}
-}));
+});
