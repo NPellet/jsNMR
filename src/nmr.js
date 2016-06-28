@@ -215,6 +215,7 @@ define( [ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter'
 		nmr.integrals.splice( nmr.integrals.indexOf( i ), 1 );
 		nmr.recalculateIntegrals( );
 
+		this.assignement.removePairsWithShape( integral );
 		this.emit( "integralRemoved" );
 	}
 
