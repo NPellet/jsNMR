@@ -151,7 +151,7 @@ define( [ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter'
 
 		if( this.options.assignment ) {
 
-			this.assignement = new Assignment( $.extend( this.options.assignment, { graphs: this.graphs, domGraphs: this.options.dom } ) );	
+			this.assignement = new Assignment( $.extend( this.options.assignment, { graphs: { 'x': this.graphs }, domGraphs: this.options.dom } ) );	
 			//this.assignement.setAssignment( [ [ "1", "gGQHLIeIUjdA~dPHeT" ] ] );
 		}
 
@@ -195,7 +195,8 @@ define( [ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter'
 		} else {
 			integral.setSerie( this.graphs.getSerie( 0 ) );	
 		}
-	
+		
+		integral.addClass('bindable');
 		this.integrals.push( integral );
 
 		this.emit( "integralCreated" );
@@ -251,7 +252,6 @@ define( [ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter'
 		}
 	}
 
-
 	NMR.prototype.integralValueChanged = function( integral ) {
 
 		var fl = parseFloat( integral.getLabelText( 0 ) );
@@ -259,7 +259,6 @@ define( [ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter'
 		this.recalculateIntegrals( );
 		this.emit( "integralValueChanged" );
 	}
-
 
 	NMR.prototype.getDom = function() {
 		return this.options.dom;
@@ -465,7 +464,7 @@ var j = 0;
 					self.recalculateIntegrals();
 					self.redrawIntegrals();
 				} },
-				{ plugin: 'zoom', shift: false, type: 'dblclick', options: { mode: 'gradualXY' } }
+				{ plugin: 'zoom', shift: false, type: 'dblclick', options: { mode: 'total' } }
 
 			],
 

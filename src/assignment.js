@@ -125,7 +125,6 @@ define( [ 'jquery' ], function( $ ) {
 				if( binding && ! target ) {
 					bindingLine.setAttribute('display', 'none');
 					binding = false;
-					
 					return;
 				}
 
@@ -134,8 +133,6 @@ define( [ 'jquery' ], function( $ ) {
 				}
 
 				var domTarget = event.target;
-	
-				
 				bindingLine.setAttribute('display', 'none');
 
 				if( ! $( domTarget ).is( options[ target ].bindableFilter ) && ! $( domTarget ).get( 0 ).classList.contains( options[ target ].bindableFilterClass ) > -1 ) {
@@ -145,17 +142,10 @@ define( [ 'jquery' ], function( $ ) {
 				} else {
 
 					self[ target ] = event.target;
-
-
 					binding = false;
 					bindSave();
-
-		
-
 				}
 
-				
-				
 				for( var i in options.graphs ) { // We can now unlock everything
 					options.graphs[ i ].unlockShapes();	
 				}			
@@ -354,6 +344,7 @@ define( [ 'jquery' ], function( $ ) {
 			bindSave = function() {
 
 				var pair;
+
 				if( pair = lookForPair( self.jsGraphShape, self.targetB ) ) {
 					removePair( pair );
 					unhighlightPair( pair );
@@ -381,13 +372,12 @@ define( [ 'jquery' ], function( $ ) {
 
 			lookForPair = function( A, B ) {
 
-				self.bindingPairs.map( function( pair ) {
+				for( var i = 0; i < self.bindingPairs.length; i++ ) {
 
-					if( pair.jsGraphShape == A || pair.targetB == B ) {
-						return pair;
+					if( self.bindingPairs[ i ].jsGraphShape == A || self.bindingPairs[ i ].targetB == B ) {
+						return self.bindingPairs[ i ];
 					}
-				} );
-
+				}
 				return false;
 			},
 
