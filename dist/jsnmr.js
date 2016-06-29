@@ -1,5 +1,5 @@
 /*!
- * jsNMR JavaScript Graphing Library v0.0.8
+ * jsNMR JavaScript Graphing Library v0.0.9
  * http://github.com/NPellet/jsNMR
  *
  * Copyright 2014 Norman Pellet and other authors
@@ -7,7 +7,7 @@
  *
  * Released under the MIT license
  *
- * Date: 2016-06-29T06:16Z
+ * Date: 2016-06-29T06:24Z
  */
 
 define(['jquery', 'jsgraph', 'jcampconverter', 'eventEmitter'], function($, Graph, JcampConverter, EventEmitter) {
@@ -1202,7 +1202,7 @@ define( 'assignment',[ 'jquery' ], function( $ ) {
 
 });
 
-define( [ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter', 'eventEmitter' ], function( $, Graph, Shape1DNMR, Assignment, JcampConverter, EE ) {
+define( 'nmr', [ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter', 'eventEmitter' ], function( $, Graph, Shape1DNMR, Assignment, JcampConverter, EE ) {
 
 	// Root here
 	var defaults = {
@@ -1521,7 +1521,7 @@ define( [ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter'
 
 	NMR.prototype.loaded = function( series, options, name ) {
 	
-define( function() {
+define( 'nmr',[],function() {
 
 	return [ function( domGraph ) {
 
