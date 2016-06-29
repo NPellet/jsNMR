@@ -5,6 +5,7 @@ var baseOptions = {
     useStrict: true,
     include: ['nmr'],
     paths: {
+        eventEmitter: 'empty:',
         jsgraph: 'empty:',
         jquery: 'empty:',
         jcampconverter: 'empty:'

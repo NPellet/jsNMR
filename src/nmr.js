@@ -1,4 +1,4 @@
-define( [ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter', '../lib/components/eventEmitter/EventEmitter' ], function( $, Graph, Shape1DNMR, Assignment, JcampConverter, EE ) {
+define([ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter', 'eventEmitter' ], function( $, Graph, Shape1DNMR, Assignment, JcampConverter, EE ) {
 
 	// Root here
 	var defaults = {
@@ -315,8 +315,10 @@ define( [ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter'
 
 
 	NMR.prototype.loaded = function( series, options, name ) {
+
 	
 		this.setSerieX( name, series.x.spectra[ 0 ].data[ 0 ], { label: "SomeLabel" } );
+
 	};
 
 
