@@ -1,4 +1,4 @@
-define( [ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter', 'eventEmitter' ], function( $, Graph, Shape1DNMR, Assignment, JcampConverter, EE ) {
+define( 'nmr', [ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter', 'eventEmitter' ], function( $, Graph, Shape1DNMR, Assignment, JcampConverter, EE ) {
 
 	// Root here
 	var defaults = {
