@@ -1,6 +1,6 @@
 {
   "name": "jsgraph",
-  "version": "1.13.3-83",
+  "version": "1.14.4-10",
   "homepage": "http://jsgraph.org",
   "main": [
     "dist/jsgraph.js",
@@ -21,13 +21,13 @@
     "requirejs": "~2.1.14",
     "eventEmitter": "git://github.com/NPellet/EventEmitter#~4.2.13"
   },
-  "_release": "1.13.3-83",
+  "_release": "1.14.4-10",
   "_resolution": {
     "type": "version",
-    "tag": "v1.13.3-83",
-    "commit": "b17671322ab3a22eeb6e76e2ce1ba01cd65ded8f"
+    "tag": "v1.14.4-10",
+    "commit": "f416961df1e097d52e707e8d908b72378d362fe5"
   },
   "_source": "https://github.com/NPellet/jsGraph.git",
-  "_target": "v1.13.3-83",
+  "_target": "v1.14.4-10",
   "_originalSource": "jsgraph"
 }
