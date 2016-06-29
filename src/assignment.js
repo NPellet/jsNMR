@@ -12,15 +12,17 @@ define( [ 'jquery' ], function( $ ) {
 			this.options = options;
 			this.bindingPairs = [];
 
+			this.stashedLines = [];
+			this.currentLines = [];
+
+
 			var binding = false,
 			bindingA = false,
 			bindingB = false,
 			bindingLine,
 			highlighted = {},
 			targetting,
-			stashedLines = [],
-			currentLines = [],
-
+			
 			mousedown = function( el, event, element ) {
 
 				checkBindingPairs();
@@ -209,7 +211,7 @@ define( [ 'jquery' ], function( $ ) {
 
 				for( var i = 0; i < elements.length; i ++ ) {
 
-					allPairs( unhighlightPair, elements[ i ], function( pair ) {
+					allPairs( self.unhighlightPair, elements[ i ], function( pair ) {
 						eqs = eqs.concat( $.makeArray( getEquivalents( otherTarget( target ), pair[ otherTarget( target ) ] ) ) );
 					} );
 				}
@@ -247,6 +249,7 @@ define( [ 'jquery' ], function( $ ) {
 
 			getEquivalents = function( target, element ) {
 				var selector = element.getAttribute( options[ target ].attributeEquivalents );
+			
 				return $( options[ target ].dom ).find( "[" + options[ target ].attributeEquivalents + "=\"" + selector + "\"]");
 			},
 
@@ -280,10 +283,10 @@ define( [ 'jquery' ], function( $ ) {
 
 					if( self.bindingPairs[ i ].jsGraphShape == element || self.bindingPairs[ i ].targetB == element ) {
 
-						fct( self.bindingPairs[ i ] );
+						fct.call( self, self.bindingPairs[ i ] );
 
 						if( callback ) {
-							callback( self.bindingPairs[ i ] );
+							callback.call( self, self.bindingPairs[ i ] );
 						}
 					}
 				}
@@ -302,8 +305,8 @@ define( [ 'jquery' ], function( $ ) {
 
 				var line;
 
-				if( stashedLines.length > 0 ) {
-					line = stashedLines.pop();
+				if( self.stashedLines.length > 0 ) {
+					line = self.stashedLines.pop();
 					line.setAttribute('display', 'block');
 				} else {
 					line = document.createElementNS( ns, 'line');	
@@ -317,23 +320,13 @@ define( [ 'jquery' ], function( $ ) {
 				line.setAttribute('y2', posB.top - posMain.top + bbB.height / 2 );
 
 				pair.line = line;
-				currentLines.push( line );
+				self.currentLines.push( line );
 
 				topSVG.appendChild( line );
 			},
 
 
-			unhighlightPair = function( pair ) {
-
-				pair.line = false;
-
-				currentLines.map( function( line ) {
-					line.setAttribute('display', 'none');
-				} );
-
-				stashedLines = stashedLines.concat( currentLines );
-				currentLines = [];
-			},
+			
 
 			bindSave = function() {
 
@@ -341,7 +334,7 @@ define( [ 'jquery' ], function( $ ) {
 
 				if( pair = lookForPair( self.jsGraphShape, self.targetB ) ) {
 					removePair( pair );
-					unhighlightPair( pair );
+					self.unhighlightPair( pair );
 					return false;
 				}
 
@@ -357,10 +350,6 @@ define( [ 'jquery' ], function( $ ) {
 
 			},
 
-			removePair = function( pair ) {
-				self.bindingPairs.splice( self.bindingPairs.indexOf( pair ), 1 );
-				unhighlightPair( pair );
-			},
 
 			lookForPair = function( A, B ) {
 
@@ -374,17 +363,6 @@ define( [ 'jquery' ], function( $ ) {
 			},
 
 
-			lookForPairsByA = function( A ) {
-
-				var pairs = [];
-				for( var i = 0; i < self.bindingPairs.length; i++ ) {
-					if( self.bindingPairs[ i ].jsGraphShape == A ) {
-						pairs.push( self.bindingPairs[ i ] );
-					}
-				}
-
-				return pairs;
-			},
 
 
 			checkBindingPairs = function() {
@@ -464,6 +442,26 @@ define( [ 'jquery' ], function( $ ) {
 			setEvents( );	
 	};
 
+
+	Assignment.prototype.removePair = function( pair ) {
+
+		this.bindingPairs.splice( this.bindingPairs.indexOf( pair ), 1 );
+		this.unhighlightPair( pair );
+	};
+
+	Assignment.prototype.unhighlightPair = function( pair ) {
+
+		pair.line = false;
+
+		this.currentLines.map( function( line ) {
+			line.setAttribute('display', 'none');
+		} );
+
+		this.stashedLines = this.stashedLines.concat( this.currentLines );
+		this.currentLines = [];
+	};
+
+
 	Assignment.prototype.getAssignment = function() {
 
 		var self = this;
@@ -484,11 +482,25 @@ define( [ 'jquery' ], function( $ ) {
 	Assignment.prototype.removePairsWithShape = function( shape ) {
 
 		var self = this;
-		var pairs = this.lookForPairsByA( shape ).map( function( pair ) {
+		var pairs = this.lookForPairsByShape( shape ).map( function( pair ) {
+
 			self.removePair( pair );
 
 		});
 	}
+
+	Assignment.prototype.lookForPairsByShape = function( A ) {
+
+		var pairs = [];
+		for( var i = 0; i < this.bindingPairs.length; i++ ) {
+
+			if( this.bindingPairs[ i ].jsGraphShape == A ) {
+				pairs.push( this.bindingPairs[ i ] );
+			}
+		}
+
+		return pairs;
+	};
 
 	Assignment.prototype.findElement = function( target, selector ) {
 

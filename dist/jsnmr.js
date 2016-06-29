@@ -1,5 +1,5 @@
 /*!
- * jsNMR JavaScript Graphing Library v0.0.7
+ * jsNMR JavaScript Graphing Library v0.0.8
  * http://github.com/NPellet/jsNMR
  *
  * Copyright 2014 Norman Pellet and other authors
@@ -7,7 +7,7 @@
  *
  * Released under the MIT license
  *
- * Date: 2016-06-28T14:56Z
+ * Date: 2016-06-29T10:00Z
  */
 
 define(['jquery', 'jsgraph', 'jcampconverter'], function($, Graph, JcampConverter) {
@@ -703,15 +703,17 @@ define( 'assignment',[ 'jquery' ], function( $ ) {
 			this.options = options;
 			this.bindingPairs = [];
 
+			this.stashedLines = [];
+			this.currentLines = [];
+
+
 			var binding = false,
 			bindingA = false,
 			bindingB = false,
 			bindingLine,
 			highlighted = {},
 			targetting,
-			stashedLines = [],
-			currentLines = [],
-
+			
 			mousedown = function( el, event, element ) {
 
 				checkBindingPairs();
@@ -900,7 +902,7 @@ define( 'assignment',[ 'jquery' ], function( $ ) {
 
 				for( var i = 0; i < elements.length; i ++ ) {
 
-					allPairs( unhighlightPair, elements[ i ], function( pair ) {
+					allPairs( self.unhighlightPair, elements[ i ], function( pair ) {
 						eqs = eqs.concat( $.makeArray( getEquivalents( otherTarget( target ), pair[ otherTarget( target ) ] ) ) );
 					} );
 				}
@@ -938,6 +940,7 @@ define( 'assignment',[ 'jquery' ], function( $ ) {
 
 			getEquivalents = function( target, element ) {
 				var selector = element.getAttribute( options[ target ].attributeEquivalents );
+			
 				return $( options[ target ].dom ).find( "[" + options[ target ].attributeEquivalents + "=\"" + selector + "\"]");
 			},
 
@@ -971,10 +974,10 @@ define( 'assignment',[ 'jquery' ], function( $ ) {
 
 					if( self.bindingPairs[ i ].jsGraphShape == element || self.bindingPairs[ i ].targetB == element ) {
 
-						fct( self.bindingPairs[ i ] );
+						fct.call( self, self.bindingPairs[ i ] );
 
 						if( callback ) {
-							callback( self.bindingPairs[ i ] );
+							callback.call( self, self.bindingPairs[ i ] );
 						}
 					}
 				}
@@ -993,8 +996,8 @@ define( 'assignment',[ 'jquery' ], function( $ ) {
 
 				var line;
 
-				if( stashedLines.length > 0 ) {
-					line = stashedLines.pop();
+				if( self.stashedLines.length > 0 ) {
+					line = self.stashedLines.pop();
 					line.setAttribute('display', 'block');
 				} else {
 					line = document.createElementNS( ns, 'line');	
@@ -1008,23 +1011,13 @@ define( 'assignment',[ 'jquery' ], function( $ ) {
 				line.setAttribute('y2', posB.top - posMain.top + bbB.height / 2 );
 
 				pair.line = line;
-				currentLines.push( line );
+				self.currentLines.push( line );
 
 				topSVG.appendChild( line );
 			},
 
 
-			unhighlightPair = function( pair ) {
-
-				pair.line = false;
-
-				currentLines.map( function( line ) {
-					line.setAttribute('display', 'none');
-				} );
-
-				stashedLines = stashedLines.concat( currentLines );
-				currentLines = [];
-			},
+			
 
 			bindSave = function() {
 
@@ -1032,7 +1025,7 @@ define( 'assignment',[ 'jquery' ], function( $ ) {
 
 				if( pair = lookForPair( self.jsGraphShape, self.targetB ) ) {
 					removePair( pair );
-					unhighlightPair( pair );
+					self.unhighlightPair( pair );
 					return false;
 				}
 
@@ -1048,10 +1041,6 @@ define( 'assignment',[ 'jquery' ], function( $ ) {
 
 			},
 
-			removePair = function( pair ) {
-				self.bindingPairs.splice( self.bindingPairs.indexOf( pair ), 1 );
-				unhighlightPair( pair );
-			},
 
 			lookForPair = function( A, B ) {
 
@@ -1065,17 +1054,6 @@ define( 'assignment',[ 'jquery' ], function( $ ) {
 			},
 
 
-			lookForPairsByA = function( A ) {
-
-				var pairs = [];
-				for( var i = 0; i < self.bindingPairs.length; i++ ) {
-					if( self.bindingPairs[ i ].jsGraphShape == A ) {
-						pairs.push( self.bindingPairs[ i ] );
-					}
-				}
-
-				return pairs;
-			},
 
 
 			checkBindingPairs = function() {
@@ -1155,6 +1133,26 @@ define( 'assignment',[ 'jquery' ], function( $ ) {
 			setEvents( );	
 	};
 
+
+	Assignment.prototype.removePair = function( pair ) {
+
+		this.bindingPairs.splice( this.bindingPairs.indexOf( pair ), 1 );
+		this.unhighlightPair( pair );
+	};
+
+	Assignment.prototype.unhighlightPair = function( pair ) {
+
+		pair.line = false;
+
+		this.currentLines.map( function( line ) {
+			line.setAttribute('display', 'none');
+		} );
+
+		this.stashedLines = this.stashedLines.concat( this.currentLines );
+		this.currentLines = [];
+	};
+
+
 	Assignment.prototype.getAssignment = function() {
 
 		var self = this;
@@ -1175,11 +1173,25 @@ define( 'assignment',[ 'jquery' ], function( $ ) {
 	Assignment.prototype.removePairsWithShape = function( shape ) {
 
 		var self = this;
-		var pairs = this.lookForPairsByA( shape ).map( function( pair ) {
+		var pairs = this.lookForPairsByShape( shape ).map( function( pair ) {
+
 			self.removePair( pair );
 
 		});
 	}
+
+	Assignment.prototype.lookForPairsByShape = function( A ) {
+
+		var pairs = [];
+		for( var i = 0; i < this.bindingPairs.length; i++ ) {
+
+			if( this.bindingPairs[ i ].jsGraphShape == A ) {
+				pairs.push( this.bindingPairs[ i ] );
+			}
+		}
+
+		return pairs;
+	};
 
 	Assignment.prototype.findElement = function( target, selector ) {
 
@@ -1676,7 +1688,7 @@ define( 'assignment',[ 'jquery' ], function( $ ) {
     }
 }.call(this));
 
-define( [ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter', '../lib/components/eventEmitter/EventEmitter' ], function( $, Graph, Shape1DNMR, Assignment, JcampConverter, EE ) {
+define( 'nmr',[ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter', '../lib/components/eventEmitter/EventEmitter' ], function( $, Graph, Shape1DNMR, Assignment, JcampConverter, EE ) {
 
 	// Root here
 	var defaults = {
@@ -1890,10 +1902,9 @@ define( [ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter'
 
 	NMR.prototype.integralRemoved = function( integral ) {
 
-		nmr.integrals.splice( nmr.integrals.indexOf( i ), 1 );
-		nmr.recalculateIntegrals( );
-
-		this.assignement.removePairsWithShape( integral );
+		this.integrals.splice( this.integrals.indexOf( integral ), 1 );
+		this.recalculateIntegrals( );
+		this.assignement.removePairsWithShape( integral._dom );
 		this.emit( "integralRemoved" );
 	}
 
@@ -1995,86 +2006,7 @@ define( [ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter'
 
 	NMR.prototype.loaded = function( series, options, name ) {
 	
-define( function() {
-
-	return [ function( domGraph ) {
-
-	var graph = new Graph( domGraph, { 
-			
-		plugins: {
-			 'zoom': { zoomMode: 'xy', transition: true },
-			 'drag': {
-		          persistanceX: true,
-		          dragY: false
-		        },
-
-		}
-	}, { });
-
-	var data = [];
-	var colors = [];
-//	http://stackoverflow.com/questions/17242144/javascript-convert-hsb-hsv-color-to-rgb-accurately
-	/* accepts parameters
-	 * h  Object = {h:x, s:y, v:z}
-	 * OR 
-	 * h, s, v
-	*/
-
-	var hexChar = ["0", "1", "2", "3", "4", "5", "6", "7","8", "9", "A", "B", "C", "D", "E", "F"];
-
-	function byteToHex(b) {
-	  return hexChar[(b >> 4) & 0x0f] + hexChar[b & 0x0f];
-	}
-
-	function HSVtoRGB(h, s, v) {
-	    var r, g, b, i, f, p, q, t;
-	    if (arguments.length === 1) {
-	        s = h.s, v = h.v, h = h.h;
-	    }
-	    i = Math.floor(h * 6);
-	    f = h * 6 - i;
-	    p = v * (1 - s);
-	    q = v * (1 - f * s);
-	    t = v * (1 - (1 - f) * s);
-	    switch (i % 6) {
-	        case 0: r = v, g = t, b = p; break;
-	        case 1: r = q, g = v, b = p; break;
-	        case 2: r = p, g = v, b = t; break;
-	        case 3: r = p, g = q, b = v; break;
-	        case 4: r = t, g = p, b = v; break;
-	        case 5: r = v, g = p, b = q; break;
-	    }
-	    return "#" + byteToHex( Math.floor(r * 255) ) + byteToHex( Math.floor(g * 255) ) + byteToHex( Math.floor(b * 255) );
-	}
-
-	for( var i = 0; i < Math.PI * 10; i += 0.001 ) {
-		data.push( i );
-		data.push( Math.sin( i ) );
-		colors.push( HSVtoRGB( Math.pow(Math.sin( i ), 2), 0.8, 0.8 ) );
-	}
-
-		
-		var s = graph.newSerie("a", {}, "line.color").autoAxis().setData(data);
-		s.setColors([ colors ]);
-		graph.draw();
-		var date = Date.now();
-		graph.drawSeries( true );
-
-var j = 0;
-		for( var i in s.lines ) {
-			j++;
-		}
-		console.log( j );
-
-	}, 
-
-		"Basic example", 
-		[ 'Setting up a chart takes only a couple lines. Call <code>new Graph( domElement );</code> to start a graph. Render it with <code>graph.redraw();</code>', 'To add a serie, call <code>graph.newSerie( "serieName" )</code>. To set data, call <code>serie.setData()</code> method.'] 
-	];
-
-
-} );
-	this.setSerieX( name, series.x.spectra[ 0 ].data[ 0 ], { label: "SomeLabel" } );
+		this.setSerieX( name, series.x.spectra[ 0 ].data[ 0 ], { label: "SomeLabel" } );
 	};
 
 
@@ -2119,10 +2051,20 @@ var j = 0;
 
 
 
-					attributes: { 'data-bindable': function() { return 1; } },
+					attributes: { 'data-bindable': function() { return Math.random(); }, 'id': function() { return Math.random(); } },
 
 					onCreatedShape: function( shape ) {
+
+						shape.addAttribute( 'id', Math.random() );
 						self.integralCreated( shape );
+					},
+
+					onBeforeNewShape: function( shape, event ) {
+
+						if( event.target.classList.contains( 'bindable' ) > 0 ) {
+							this.graph.prevent( true );
+						}
+						
 					},
 
 
@@ -2149,6 +2091,7 @@ var j = 0;
 
 
 
+
 			onBeforeNewShape: function() {
 
 				if( ! this.selectedSerie && this.series.length > 1 ) {
@@ -2161,6 +2104,13 @@ var j = 0;
 
 		this.graphs.setHeight(300);
 
+
+		this.graphs.on("shapeRemoved", function( shape ) {
+
+			if( shape.getType() == 'nmrintegral' ) {
+				self.integralRemoved( shape );
+			}
+		});
 
 		this.graphs.on("shapeChanged", function( shape ) {
 

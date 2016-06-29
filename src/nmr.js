@@ -212,10 +212,9 @@ define( [ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter'
 
 	NMR.prototype.integralRemoved = function( integral ) {
 
-		nmr.integrals.splice( nmr.integrals.indexOf( i ), 1 );
-		nmr.recalculateIntegrals( );
-
-		this.assignement.removePairsWithShape( integral );
+		this.integrals.splice( this.integrals.indexOf( integral ), 1 );
+		this.recalculateIntegrals( );
+		this.assignement.removePairsWithShape( integral._dom );
 		this.emit( "integralRemoved" );
 	}
 
@@ -317,86 +316,7 @@ define( [ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter'
 
 	NMR.prototype.loaded = function( series, options, name ) {
 	
-define( function() {
-
-	return [ function( domGraph ) {
-
-	var graph = new Graph( domGraph, { 
-			
-		plugins: {
-			 'zoom': { zoomMode: 'xy', transition: true },
-			 'drag': {
-		          persistanceX: true,
-		          dragY: false
-		        },
-
-		}
-	}, { });
-
-	var data = [];
-	var colors = [];
-//	http://stackoverflow.com/questions/17242144/javascript-convert-hsb-hsv-color-to-rgb-accurately
-	/* accepts parameters
-	 * h  Object = {h:x, s:y, v:z}
-	 * OR 
-	 * h, s, v
-	*/
-
-	var hexChar = ["0", "1", "2", "3", "4", "5", "6", "7","8", "9", "A", "B", "C", "D", "E", "F"];
-
-	function byteToHex(b) {
-	  return hexChar[(b >> 4) & 0x0f] + hexChar[b & 0x0f];
-	}
-
-	function HSVtoRGB(h, s, v) {
-	    var r, g, b, i, f, p, q, t;
-	    if (arguments.length === 1) {
-	        s = h.s, v = h.v, h = h.h;
-	    }
-	    i = Math.floor(h * 6);
-	    f = h * 6 - i;
-	    p = v * (1 - s);
-	    q = v * (1 - f * s);
-	    t = v * (1 - (1 - f) * s);
-	    switch (i % 6) {
-	        case 0: r = v, g = t, b = p; break;
-	        case 1: r = q, g = v, b = p; break;
-	        case 2: r = p, g = v, b = t; break;
-	        case 3: r = p, g = q, b = v; break;
-	        case 4: r = t, g = p, b = v; break;
-	        case 5: r = v, g = p, b = q; break;
-	    }
-	    return "#" + byteToHex( Math.floor(r * 255) ) + byteToHex( Math.floor(g * 255) ) + byteToHex( Math.floor(b * 255) );
-	}
-
-	for( var i = 0; i < Math.PI * 10; i += 0.001 ) {
-		data.push( i );
-		data.push( Math.sin( i ) );
-		colors.push( HSVtoRGB( Math.pow(Math.sin( i ), 2), 0.8, 0.8 ) );
-	}
-
-		
-		var s = graph.newSerie("a", {}, "line.color").autoAxis().setData(data);
-		s.setColors([ colors ]);
-		graph.draw();
-		var date = Date.now();
-		graph.drawSeries( true );
-
-var j = 0;
-		for( var i in s.lines ) {
-			j++;
-		}
-		console.log( j );
-
-	}, 
-
-		"Basic example", 
-		[ 'Setting up a chart takes only a couple lines. Call <code>new Graph( domElement );</code> to start a graph. Render it with <code>graph.redraw();</code>', 'To add a serie, call <code>graph.newSerie( "serieName" )</code>. To set data, call <code>serie.setData()</code> method.'] 
-	];
-
-
-} );
-	this.setSerieX( name, series.x.spectra[ 0 ].data[ 0 ], { label: "SomeLabel" } );
+		this.setSerieX( name, series.x.spectra[ 0 ].data[ 0 ], { label: "SomeLabel" } );
 	};
 
 
@@ -441,10 +361,20 @@ var j = 0;
 
 
 
-					attributes: { 'data-bindable': function() { return 1; } },
+					attributes: { 'data-bindable': function() { return Math.random(); }, 'id': function() { return Math.random(); } },
 
 					onCreatedShape: function( shape ) {
+
+						shape.addAttribute( 'id', Math.random() );
 						self.integralCreated( shape );
+					},
+
+					onBeforeNewShape: function( shape, event ) {
+
+						if( event.target.classList.contains( 'bindable' ) > 0 ) {
+							this.graph.prevent( true );
+						}
+						
 					},
 
 
@@ -471,6 +401,7 @@ var j = 0;
 
 
 
+
 			onBeforeNewShape: function() {
 
 				if( ! this.selectedSerie && this.series.length > 1 ) {
@@ -483,6 +414,13 @@ var j = 0;
 
 		this.graphs.setHeight(300);
 
+
+		this.graphs.on("shapeRemoved", function( shape ) {
+
+			if( shape.getType() == 'nmrintegral' ) {
+				self.integralRemoved( shape );
+			}
+		});
 
 		this.graphs.on("shapeChanged", function( shape ) {
 
