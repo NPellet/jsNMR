@@ -3,6 +3,7 @@
 require.config({
 	baseUrl: '../',
 	paths: {
+		'eventEmitter': 'lib/components/eventEmitter/EventEmitter',
 		'jcampconverter': 'lib/components/jcampconverter/dist/jcampconverter',
 		'jquery': 'lib/components/jquery/dist/jquery.min',
 		'jqueryui': 'lib/components/jquery-ui/ui/minified/jquery-ui.min',

@@ -1,2 +1,2 @@
-define(['jquery', 'jsgraph', 'jcampconverter'], function($, Graph, JcampConverter) {
+define(['jquery', 'jsgraph', 'jcampconverter', 'eventEmitter'], function($, Graph, JcampConverter, EventEmitter) {
 

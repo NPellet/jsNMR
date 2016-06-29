@@ -28,6 +28,7 @@
     "requirejs": "^2.2.0"
   },
   "dependencies": {
+    "eventEmitter": "^5.1.0",
     "jcampconverter": "^2.3.0",
     "jquery": "^2.2.1",
     "jsgraph": "v1.13.3-83"
