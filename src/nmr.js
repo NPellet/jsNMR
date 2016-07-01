@@ -164,9 +164,9 @@ define([ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter',
 	NMR.prototype.integralCreated = function( integral ) {
 
 		if( this.graphs.selectedSerie ) {
-			integral.setSerie( this.graphs.selectedSerie );	
+			integral.setSerie( this.graphs.selectedSerie );
 		} else {
-			integral.setSerie( this.graphs.getSerie( 0 ) );	
+			integral.setSerie( this.graphs.getSerie( 0 ) );
 		}
 		
 		integral.addClass('bindable');
@@ -406,6 +406,18 @@ define([ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter',
 
 		this.graphs.draw( );	
 		
+	};
+
+	NMR.prototype.getIntegrals = function() {
+		return this.integrals.map(shape => shape.getProperties());
+	};
+
+	NMR.prototype.setIntegrals = function(integrals) {
+		integrals.forEach(integral => {
+			const shape = this.graphs.newShape('nmrintegral', null, false, integral);
+			this.integralCreated(shape);
+		});
+		this.redrawIntegrals();
 	};
 
 	return NMR;
