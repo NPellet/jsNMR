@@ -1,5 +1,5 @@
 /*!
- * jsNMR JavaScript Graphing Library v0.0.12
+ * jsNMR JavaScript Graphing Library v0.0.13
  * http://github.com/NPellet/jsNMR
  *
  * Copyright 2014 Norman Pellet and other authors
@@ -7,7 +7,7 @@
  *
  * Released under the MIT license
  *
- * Date: 2016-07-01T12:57Z
+ * Date: 2016-07-01T13:00Z
  */
 
 define(['jquery', 'jsgraph', 'jcampconverter', 'eventEmitter'], function($, Graph, JcampConverter, EventEmitter) {

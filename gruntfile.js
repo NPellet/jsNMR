@@ -77,7 +77,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-copy');
     grunt.loadNpmTasks('grunt-bump');
 
-    grunt.registerTask('default', [ 'requirejs', 'concatSource', 'concatMin' ]);
+    grunt.registerTask('default', [ 'requirejs', 'concatSource' ]);
 
 
     function processSource( source ) {
@@ -98,18 +98,6 @@ module.exports = function(grunt) {
         });
         
         grunt.file.write( './dist/jsnmr.js', processSource( source ) );
-
-    });
-
-
-    grunt.registerTask( 'concatMin', 'Concat all src files', function() {
-
-        var source = [ './src/build_utils/header.min.js', './dist/jsnmr.min.js' ];
-        source = source.map( function( path ) {
-            return grunt.file.read( path );
-        });
-        
-        grunt.file.write( './dist/jsnmr.min.js', processSource( source ) );
 
     });
 
