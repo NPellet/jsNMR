@@ -1,5 +1,5 @@
 /*!
- * jsNMR JavaScript Graphing Library v0.0.11
+ * jsNMR JavaScript Graphing Library v0.0.12
  * http://github.com/NPellet/jsNMR
  *
  * Copyright 2014 Norman Pellet and other authors
@@ -7,7 +7,7 @@
  *
  * Released under the MIT license
  *
- * Date: 2016-06-29T10:02Z
+ * Date: 2016-07-01T12:57Z
  */
 
 define(['jquery', 'jsgraph', 'jcampconverter', 'eventEmitter'], function($, Graph, JcampConverter, EventEmitter) {
@@ -1218,7 +1218,6 @@ define('nmr',[ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconve
 
 	// Root here
 	var defaults = {
-
 		mode: '1d',
 		molecule: false,
 		urls: {
@@ -1226,7 +1225,7 @@ define('nmr',[ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconve
 		}
 	};
 
-	function fetchUrls( nmr, urls, options ) {
+	function fetchUrls( nmr, urls ) {
 
 		var fetching = [];
 		for( var i in urls ) {
@@ -1270,15 +1269,9 @@ define('nmr',[ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconve
 			}
 
 			nmr.series.push( urls );
-			nmr.loaded( urls, options, "a" + Math.random() );
+			nmr.loaded( urls, "a" + Math.random() );
 		} );
 	}
-
-/*
-	function getOtherMode( nmr, mode ) {
-		return mode == 'x' ? 'y' : ( mode == 'y' ? 'x' : ( console.error( "Mode not recognized") ) );
-	}
-*/
 
 	function makeNMRIntegral( nmr, mode, integral ) {
 		// External call
@@ -1311,7 +1304,7 @@ define('nmr',[ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconve
 		return shape;
 	}
 	
-	function removeSerie( nmr, axis, name ) {
+	function removeSerie( nmr, name ) {
 
 
 		var serie;
@@ -1332,23 +1325,7 @@ define('nmr',[ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconve
 
 		this.options = $.extend( true, {}, defaults, options );
 		this.series = [];
-
-
-		// 1D
-		
-/*
-		if( this.isSymmetric() ) {
-			this.nmrSignal1dOptions.y = $.extend(true, {}, this.nmrSignal1dOptions.x );
-			this.nmrSignal1dOptions.y.shapeOptions.axis = 'y';
-		}
-
-		this.nmrSignal1dOptions.x = $.extend( true, {}, this.nmrSignal1dOptions.x, {} );
-		this.nmrSignal1dOptions.y = $.extend( true, {}, this.nmrSignal1dOptions.x, {} );
-
-		*/
-		this.graphs;
 		this.integrals = [];
-
 
 		nmr.options.dom.append('<div />');
 		nmr.makeGraph();
@@ -1366,14 +1343,12 @@ define('nmr',[ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconve
 		}
 
 		if( this.options.assignment ) {
-
 			this.assignement = new Assignment( $.extend( this.options.assignment, { graphs: { 'x': this.graphs }, domGraphs: this.options.dom } ) );	
-			//this.assignement.setAssignment( [ [ "1", "gGQHLIeIUjdA~dPHeT" ] ] );
 		}
 
 
 		this.heightIntegral1 = 150;
-	};
+	}
 
 
 	var loadDefaults = {
@@ -1402,22 +1377,24 @@ define('nmr',[ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconve
 		fetchUrls( this, urls, load );
 	};
 
+	NMR.prototype.loadJcamp = function (jcamp, name) {
+	    removeSerie(this, name);
+        const data = JcampConverter.convert( jcamp, {keepSpectra:true} );
+        this.loaded( {x: data}, name );
+    };
+
 	NMR.prototype.integralCreated = function( integral ) {
 
-		//shape.setSerie( self.graphs.getSerie( 0 ) );
-
 		if( this.graphs.selectedSerie ) {
-			integral.setSerie( this.graphs.selectedSerie );	
+			integral.setSerie( this.graphs.selectedSerie );
 		} else {
-			integral.setSerie( this.graphs.getSerie( 0 ) );	
+			integral.setSerie( this.graphs.getSerie( 0 ) );
 		}
 		
 		integral.addClass('bindable');
 		this.integrals.push( integral );
 
 		this.emit( "integralCreated" );
-		//integrals.push( integral );
-		//nmrint.originalShape = integral;
 	}
 
 	NMR.prototype.integralChanged = function( integral ) {
@@ -1455,7 +1432,6 @@ define('nmr',[ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconve
 				nmr.integrals[ i ].setLabelText( text );
 			}
 
-			//nmr.integrals[ mode ][ i ].setLabelPosition( {0 );
 			nmr.integrals[ i ].updateLabels();
 		}
 	}
@@ -1516,8 +1492,6 @@ define('nmr',[ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconve
 			serie_x.setLineStyle( options.lineStyle );
 		}
 
-		//serie_x.degrade( 1 ).kill()
-
 		serie_x.XIsMonotoneous();
 		serie_x.getXAxis().setAxisDataSpacingMax(0);
 		serie_x.getXAxis().setAxisDataSpacingMin(0);
@@ -1530,10 +1504,10 @@ define('nmr',[ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconve
 	};
 
 
-	NMR.prototype.loaded = function( series, options, name ) {
+	NMR.prototype.loaded = function( series, name ) {
 
 	
-		this.setSerieX( name, series.x.spectra[ 0 ].data[ 0 ], { label: "SomeLabel" } );
+		this.setSerieX( name, series.x.spectra[ 0 ].data[ 0 ], { label: name } );
 
 	};
 
@@ -1600,7 +1574,6 @@ define('nmr',[ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconve
 				},
 			},
 
-
 			mouseActions: [
 				{ plugin: 'zoom', shift: false, ctrl: false },
 				{ plugin: 'shape', shift: true, ctrl: false },
@@ -1616,9 +1589,6 @@ define('nmr',[ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconve
 				{ plugin: 'zoom', shift: false, type: 'dblclick', options: { mode: 'total' } }
 
 			],
-
-
-
 
 			onBeforeNewShape: function() {
 
@@ -1642,7 +1612,6 @@ define('nmr',[ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconve
 
 		this.graphs.on("shapeChanged", function( shape ) {
 
-		
 			if( shape.getType() == "nmrintegral" ) {
 
 				self.integralChanged( shape );
@@ -1650,7 +1619,6 @@ define('nmr',[ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconve
 		});
 
 		this.graphs.on("shapeLabelChanged", function( shape ) {
-
 
 			if( shape.getType() == "nmrintegral" ) {
 
@@ -1660,6 +1628,18 @@ define('nmr',[ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconve
 
 		this.graphs.draw( );	
 		
+	};
+
+	NMR.prototype.getIntegrals = function() {
+		return this.integrals.map(shape => shape.getProperties());
+	};
+
+	NMR.prototype.setIntegrals = function(integrals) {
+		integrals.forEach(integral => {
+			const shape = this.graphs.newShape('nmrintegral', null, false, integral);
+			this.integralCreated(shape);
+		});
+		this.redrawIntegrals();
 	};
 
 	return NMR;
