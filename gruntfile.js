@@ -65,14 +65,6 @@ module.exports = function(grunt) {
                     out: 'dist/jsnmr.js',
                     optimize: 'none'
                 })
-            },
-            compileMin: {
-                options: Object.assign({}, baseOptions, {
-                    out: 'dist/jsnmr.min.js',
-                    optimize: 'uglify2',
-                    generateSourceMaps: true,
-                    preserveLicenseComments: false
-                })
             }
         }
     });
