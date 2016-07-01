@@ -9,7 +9,7 @@ define([ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter',
 		}
 	};
 
-	function fetchUrls( nmr, urls, options ) {
+	function fetchUrls( nmr, urls ) {
 
 		var fetching = [];
 		for( var i in urls ) {
@@ -53,7 +53,7 @@ define([ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter',
 			}
 
 			nmr.series.push( urls );
-			nmr.loaded( urls, options, "a" + Math.random() );
+			nmr.loaded( urls, "a" + Math.random() );
 		} );
 	}
 
@@ -88,7 +88,7 @@ define([ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter',
 		return shape;
 	}
 	
-	function removeSerie( nmr, axis, name ) {
+	function removeSerie( nmr, name ) {
 
 
 		var serie;
@@ -160,6 +160,12 @@ define([ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter',
 
 		fetchUrls( this, urls, load );
 	};
+
+	NMR.prototype.loadJcamp = function (jcamp, name) {
+	    removeSerie(this, name);
+        const data = JcampConverter.convert( jcamp, {keepSpectra:true} );
+        this.loaded( {x: data}, name );
+    };
 
 	NMR.prototype.integralCreated = function( integral ) {
 
@@ -282,10 +288,10 @@ define([ 'jquery', 'jsgraph', './shape.1dnmr', './assignment', 'jcampconverter',
 	};
 
 
-	NMR.prototype.loaded = function( series, options, name ) {
+	NMR.prototype.loaded = function( series, name ) {
 
 	
-		this.setSerieX( name, series.x.spectra[ 0 ].data[ 0 ], { label: "SomeLabel" } );
+		this.setSerieX( name, series.x.spectra[ 0 ].data[ 0 ], { label: name } );
 
 	};
 

@@ -11,10 +11,13 @@ require.config({
 	}
 });
 
-require([ 'src/nmr' ], function( NMRHandler ) {
+require([ 'jquery', 'src/nmr' ], function( $, NMRHandler ) {
 
 	$( document ).ready( function() {
+		$.get( '../test/cosy/121-97-1_zg.jdx' ).then( loadNmr );
+	});
 
+	function loadNmr(data){
 		var nmr = new NMRHandler({
 			dom: $("#nmr2"),
 			mode: '1d',
@@ -64,16 +67,7 @@ require([ 'src/nmr' ], function( NMRHandler ) {
 			}
 		});
 
-		nmr.load( {
-
-			urls: {
-				x: '../test/cosy/121-97-1_zg.jdx', 
-			},
-
-			lineColor: 'green',
-			label: 'Some molecule'
-
-		});
-	});
+		nmr.loadJcamp(data, 'My jcamp');
+	}
 
 });
